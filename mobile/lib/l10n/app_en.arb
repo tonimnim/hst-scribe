@@ -1,0 +1,84 @@
+{
+  "@@locale": "en",
+  "appTitle": "HST Scribe",
+  "@appTitle": {
+    "description": "Application title shown in launcher, OS task switcher, and splash"
+  },
+
+  "splashLoading": "Loading…",
+  "@splashLoading": {
+    "description": "Splash screen loading indicator label"
+  },
+
+  "loginTitle": "Sign in",
+  "@loginTitle": {},
+  "loginSubtitle": "Sign in with your HST account to continue.",
+  "@loginSubtitle": {},
+  "loginButton": "Sign in with HST",
+  "@loginButton": {},
+
+  "sessionListTitle": "Sessions",
+  "@sessionListTitle": {},
+  "sessionListEmpty": "No active sessions. Start one to begin documenting.",
+  "@sessionListEmpty": {},
+  "sessionListNewSession": "New session",
+  "@sessionListNewSession": {},
+
+  "sessionStartTitle": "Confirm patient",
+  "@sessionStartTitle": {},
+  "sessionStartScanWristband": "Scan wristband",
+  "@sessionStartScanWristband": {},
+  "sessionStartConfirmPrompt": "Documenting for this patient?",
+  "@sessionStartConfirmPrompt": {},
+  "sessionStartConfirm": "Yes, this is the patient",
+  "@sessionStartConfirm": {},
+  "sessionStartCancel": "No, scan again",
+  "@sessionStartCancel": {},
+
+  "captureTitle": "Capture",
+  "@captureTitle": {},
+  "capturePushToTalk": "Push to talk",
+  "@capturePushToTalk": {},
+  "capturePause": "Pause",
+  "@capturePause": {},
+  "captureResume": "Resume",
+  "@captureResume": {},
+  "captureEnd": "End session",
+  "@captureEnd": {},
+
+  "signTitle": "Sign and submit",
+  "@signTitle": {},
+  "signBiometric": "Sign with biometric",
+  "@signBiometric": {},
+  "signPin": "Use PIN instead",
+  "@signPin": {},
+
+  "settingsTitle": "Settings",
+  "@settingsTitle": {},
+
+  "patientBannerTapToConfirm": "Tap to confirm patient",
+  "@patientBannerTapToConfirm": {},
+  "patientBannerMrnPrefix": "MRN",
+  "@patientBannerMrnPrefix": {},
+
+  "errorAuthInvalid": "Your session has expired. Please sign in again.",
+  "@errorAuthInvalid": {},
+  "errorAuthForbidden": "You don't have access to this resource.",
+  "@errorAuthForbidden": {},
+  "errorSessionNotFound": "Session not found.",
+  "@errorSessionNotFound": {},
+  "errorSessionExpired": "This session has expired or was already signed.",
+  "@errorSessionExpired": {},
+  "errorPatientLocked": "Another session is already active for this patient.",
+  "@errorPatientLocked": {},
+  "errorAudioFormat": "Audio format is not supported by the server.",
+  "@errorAudioFormat": {},
+  "errorRateLimited": "Too many requests. Please slow down.",
+  "@errorRateLimited": {},
+  "errorExtractorFailed": "We couldn't extract an event from that. You can retry.",
+  "@errorExtractorFailed": {},
+  "errorNetwork": "Network error. Reconnecting…",
+  "@errorNetwork": {},
+  "errorUnexpected": "Something went wrong. Please try again.",
+  "@errorUnexpected": {}
+}

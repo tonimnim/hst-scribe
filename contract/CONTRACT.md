@@ -228,6 +228,15 @@ Commands ∈ `confirm_last | strike_last | pause | resume | end_session`.
 ```
 `status` ∈ `confirmed | rejected | draft_edited`.
 
+**`session_ended` payload**
+```json
+{
+  "reason": "client_requested",
+  "final_seq": 4173
+}
+```
+Both fields optional. `reason` ∈ `client_requested | inactivity_timeout | server_shutdown | error` (free-form string allowed for future codes). `final_seq` is the last server-emitted `seq` the client should expect; useful for reconcile-on-reconnect to confirm no messages were dropped.
+
 ### Error codes
 
 | `code` | Meaning |

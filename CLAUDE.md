@@ -5,8 +5,8 @@ AI scribing for ASC (Ambulatory Surgery Center) nurses. Nurses speak naturally d
 ## Layout
 
 - `contract/` — shared protocol, schemas, eval set. **SOURCE OF TRUTH.** Any wire change updates here first.
-- `backend/` — Go services (gateway, session manager, ASR orchestrator, extraction worker, chart writer, audit). See `backend/PRD.md` and `backend/CONVENTIONS.md`.
-- `mobile/` — Flutter app (iPad-first, phone-capable). See `mobile/PRD.md` and `mobile/CONVENTIONS.md`.
+- `backend/` — Go services. See `backend/PRD.md`, `backend/CONVENTIONS.md`, and **`backend/AGENTS.md`** (senior-eng rules — read before coding).
+- `mobile/` — Flutter app (iPad-first, phone-capable). See `mobile/PRD.md`, `mobile/CONVENTIONS.md`, and **`mobile/AGENTS.md`** (senior-eng rules — read before coding).
 - `dev/` — mock eChart, mock ASR, seed data, docker-compose for local dev. See `dev/README.md`.
 
 ## Rules (apply to every session)

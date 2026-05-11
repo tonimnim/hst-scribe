@@ -1,0 +1,108 @@
+name: hst_scribe
+description: "HST Scribe — AI scribe for ASC nurses. Captures clinical audio, surfaces extracted chart events, supports nurse confirm/edit/sign-off."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.11.4
+  flutter: ">=3.41.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Models
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+
+  # Routing
+  go_router: ^14.6.2
+
+  # WebSocket
+  web_socket_channel: ^3.0.1
+
+  # Audio capture (PCM stream)
+  record: ^5.2.1
+
+  # Secure storage (tokens + active session PHI)
+  flutter_secure_storage: ^9.2.2
+
+  # Biometric sign-off
+  local_auth: ^2.3.0
+
+  # Wristband QR scanning
+  mobile_scanner: ^6.0.2
+
+  # i18n / formatting
+  intl: ^0.20.2
+
+  # REST client
+  dio: ^5.7.0
+
+  # Crash reporting (scrubbed)
+  sentry_flutter: ^8.11.0
+
+  # Structured logging
+  logger: ^2.5.0
+
+  # Utilities
+  meta: ^1.15.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+
+  # Lints
+  #
+  # KNOWN ISSUE — riverpod_lint omitted (Flutter 3.41 / Dart 3.11 / analyzer 7.6):
+  #
+  #   * riverpod_lint 2.6.4 transitively requires analyzer_plugin ^0.12.0,
+  #     which fails to compile against analyzer 7.6 (calls Element/Element2
+  #     APIs that were removed).
+  #   * riverpod_lint 3.1.3 requires analyzer ^9.0.0, but build_runner /
+  #     freezed / json_serializable are still on analyzer ^7.x (via the
+  #     SDK-pinned _fe_analyzer_shared 85.0.0).
+  #
+  # Re-add once the analyzer 7 → 8 ecosystem transition completes
+  # (likely Flutter 3.43+). See: https://github.com/rrousselGit/riverpod/issues
+  #
+  # In the meantime: flutter_lints + our strict analysis_options.yaml
+  # cover most of what riverpod_lint catches. The big losses are the
+  # `provider_dependencies` and `avoid_manual_providers_as_generated_provider_dependency`
+  # rules — keep an eye on those manually in PRs until we can re-enable.
+  flutter_lints: ^5.0.0
+
+  # Codegen
+  build_runner: ^2.4.13
+  freezed: ^2.5.7
+  json_serializable: ^6.9.0
+  riverpod_generator: ^2.6.3
+
+  # Test doubles
+  mocktail: ^1.0.4
+
+# ----- dependency_overrides -----
+#
+# Force `analyzer_plugin >= 0.13.4` to dodge a transitive pull of
+# `analyzer_plugin 0.12.0` (via riverpod_generator -> riverpod_analyzer_utils
+# -> custom_lint_core 0.7.1). 0.12.0 was written for analyzer 6.x and
+# fails to compile against the SDK-pinned analyzer 7.6.0 (Element vs
+# Element2 split). 0.13.4 supports analyzer ^7.5.1.
+#
+# Remove once riverpod_analyzer_utils ships a release pinned to the
+# newer analyzer_plugin (tracked: see KNOWN ISSUE note above on
+# riverpod_lint).
+dependency_overrides:
+  analyzer_plugin: ^0.13.4
+
+flutter:
+  uses-material-design: true
+  generate: true

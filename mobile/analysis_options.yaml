@@ -1,0 +1,77 @@
+# Senior-eng strict lints. See mobile/AGENTS.md.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  errors:
+    # PHI / safety
+    avoid_print: error
+    unawaited_futures: error
+    # Correctness
+    invalid_annotation_target: ignore
+    missing_required_param: error
+    missing_return: error
+    # Style enforced as errors
+    prefer_const_constructors: error
+    prefer_const_constructors_in_immutables: error
+    prefer_const_literals_to_create_immutables: error
+    prefer_const_declarations: error
+    require_trailing_commas: error
+    always_use_package_imports: error
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "lib/l10n/generated/**"
+    - "build/**"
+
+linter:
+  rules:
+    # Style
+    prefer_const_constructors: true
+    prefer_const_constructors_in_immutables: true
+    prefer_const_literals_to_create_immutables: true
+    prefer_const_declarations: true
+    require_trailing_commas: true
+    sort_constructors_first: true
+    sort_unnamed_constructors_first: true
+    always_declare_return_types: true
+    avoid_redundant_argument_values: true
+    avoid_dynamic_calls: true
+
+    # Safety / correctness
+    avoid_print: true
+    unawaited_futures: true
+    cancel_subscriptions: true
+    close_sinks: true
+    avoid_empty_else: true
+    no_adjacent_strings_in_list: true
+    throw_in_finally: true
+    use_build_context_synchronously: true
+
+    # Imports — package: across features, anything else allowed but no relative cross-feature
+    always_use_package_imports: true
+
+    # Naming
+    camel_case_types: true
+    camel_case_extensions: true
+    constant_identifier_names: true
+    file_names: true
+    library_names: true
+    library_prefixes: true
+    non_constant_identifier_names: true
+
+    # Documentation hygiene
+    public_member_api_docs: false
+
+    # Misc
+    prefer_final_locals: true
+    prefer_final_in_for_each: true
+    prefer_single_quotes: true
+    prefer_typing_uninitialized_variables: true
+    unnecessary_lambdas: true
+    unnecessary_parenthesis: true
+    unnecessary_this: true
+    use_key_in_widget_constructors: true

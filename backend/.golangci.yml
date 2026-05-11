@@ -1,0 +1,82 @@
+# HST Scribe backend — golangci-lint v2 config.
+# Strict but reasonable. Every disabled check has a documented reason below.
+
+version: "2"
+
+run:
+  timeout: 5m
+  go: "1.24"
+  tests: true
+
+linters:
+  default: none
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - ineffassign
+    - unused
+    - revive
+    - gocritic
+    - gosec
+    - errorlint
+    - contextcheck
+    - exhaustive
+    - unparam
+    - nilerr
+    - bodyclose
+  settings:
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: error-return
+        - name: error-strings
+        - name: error-naming
+        - name: exported
+        - name: increment-decrement
+        - name: var-naming
+        - name: var-declaration
+        - name: package-comments
+        - name: range
+        - name: receiver-naming
+        - name: time-naming
+        - name: unexported-return
+        - name: indent-error-flow
+        - name: errorf
+        - name: empty-block
+        - name: superfluous-else
+        - name: unused-parameter
+          disabled: true # too noisy for handler signatures
+        - name: unreachable-code
+        - name: redefines-builtin-id
+    gosec:
+      # G115 (integer overflow conversion) — we cast runtime.NumCPU() to
+      # int32 in pg.NewPool, which is bounded by GOMAXPROCS and safe.
+      excludes:
+        - G104 # errcheck dup
+    exhaustive:
+      default-signifies-exhaustive: true
+  exclusions:
+    rules:
+      # Tests routinely produce intentional throwaway values.
+      - path: _test\.go
+        linters:
+          - unparam
+          - gosec
+          - errcheck
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/tonimnim/hst-scribe/backend
