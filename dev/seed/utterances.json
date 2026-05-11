@@ -1,0 +1,117 @@
+[
+  {
+    "id": "utt-001",
+    "text": "BP one thirty over eighty two",
+    "speaker": "nurse",
+    "expected_events": [
+      { "event_type": "vital_sign", "fields": { "vital_type": "blood_pressure_systolic", "value": 130, "unit": "mmHg" } },
+      { "event_type": "vital_sign", "fields": { "vital_type": "blood_pressure_diastolic", "value": 82, "unit": "mmHg" } }
+    ]
+  },
+  {
+    "id": "utt-002",
+    "text": "Heart rate seventy two, sats ninety eight on room air",
+    "speaker": "nurse",
+    "expected_events": [
+      { "event_type": "vital_sign", "fields": { "vital_type": "heart_rate", "value": 72, "unit": "bpm" } },
+      { "event_type": "vital_sign", "fields": { "vital_type": "spo2", "value": 98, "unit": "%" } }
+    ]
+  },
+  {
+    "id": "utt-003",
+    "text": "Just gave her 4 of Zofran IV",
+    "speaker": "nurse",
+    "expected_events": [
+      {
+        "event_type": "medication_administered",
+        "fields": {
+          "medication_name": "Ondansetron",
+          "rxnorm_code": "26225",
+          "dose_value": 4,
+          "dose_unit": "mg",
+          "route": "iv"
+        }
+      }
+    ]
+  },
+  {
+    "id": "utt-004",
+    "text": "Give her 4 of Zofran IV",
+    "speaker": "nurse",
+    "expected_events": []
+  },
+  {
+    "id": "utt-005",
+    "text": "Pain is a 2 out of 10",
+    "speaker": "nurse",
+    "expected_events": [
+      { "event_type": "vital_sign", "fields": { "vital_type": "pain_score", "value": 2, "unit": "score" } }
+    ]
+  },
+  {
+    "id": "utt-006",
+    "text": "She's reporting some nausea, gave her 4 of Zofran",
+    "speaker": "nurse",
+    "expected_events": [
+      {
+        "event_type": "medication_administered",
+        "fields": {
+          "medication_name": "Ondansetron",
+          "rxnorm_code": "26225",
+          "dose_value": 4,
+          "dose_unit": "mg",
+          "indication": "nausea"
+        }
+      }
+    ]
+  },
+  {
+    "id": "utt-007",
+    "text": "Temp is ninety eight point six",
+    "speaker": "nurse",
+    "expected_events": [
+      { "event_type": "vital_sign", "fields": { "vital_type": "temperature_f", "value": 98.6, "unit": "F" } }
+    ]
+  },
+  {
+    "id": "utt-008",
+    "text": "Resps sixteen, regular",
+    "speaker": "nurse",
+    "expected_events": [
+      { "event_type": "vital_sign", "fields": { "vital_type": "respiratory_rate", "value": 16, "unit": "bpm" } }
+    ]
+  },
+  {
+    "id": "utt-009",
+    "text": "Ready for discharge, criteria met, tolerating fluids",
+    "speaker": "nurse",
+    "expected_events": [
+      {
+        "event_type": "dispo",
+        "fields": {
+          "disposition_type": "discharge_home",
+          "discharge_criteria_met": true,
+          "notes": "Tolerating fluids"
+        }
+      }
+    ]
+  },
+  {
+    "id": "utt-010",
+    "text": "Saturation dropped to 91, putting her on 2 liters nasal",
+    "speaker": "nurse",
+    "expected_events": [
+      { "event_type": "vital_sign", "fields": { "vital_type": "spo2", "value": 91, "unit": "%" } },
+      {
+        "event_type": "medication_administered",
+        "fields": {
+          "medication_name": "Oxygen",
+          "dose_value": 2,
+          "dose_unit": "unit",
+          "route": "inhaled",
+          "indication": "hypoxia"
+        }
+      }
+    ]
+  }
+]

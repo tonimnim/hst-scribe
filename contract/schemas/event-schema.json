@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hst-scribe.example/schemas/event-v1.json",
+  "title": "Extracted Event",
+  "type": "object",
+  "required": [
+    "event_id",
+    "event_type",
+    "fields",
+    "confidence",
+    "source_utterance",
+    "source_transcript_ids",
+    "extracted_at",
+    "event_time"
+  ],
+  "properties": {
+    "event_id": { "type": "string", "format": "uuid" },
+    "event_type": {
+      "type": "string",
+      "enum": ["vital_sign", "medication_administered", "dispo", "note"]
+    },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "source_utterance": { "type": "string" },
+    "source_transcript_ids": {
+      "type": "array",
+      "items": { "type": "string", "format": "uuid" }
+    },
+    "extracted_at": { "type": "string", "format": "date-time" },
+    "event_time": { "type": "string", "format": "date-time" },
+    "fields": { "type": "object" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "event_type": { "const": "vital_sign" } } },
+      "then": {
+        "properties": {
+          "fields": {
+            "type": "object",
+            "required": ["vital_type", "value", "unit"],
+            "properties": {
+              "vital_type": {
+                "type": "string",
+                "enum": [
+                  "blood_pressure_systolic",
+                  "blood_pressure_diastolic",
+                  "heart_rate",
+                  "spo2",
+                  "respiratory_rate",
+                  "temperature_c",
+                  "temperature_f",
+                  "pain_score"
+                ]
+              },
+              "value": { "type": "number" },
+              "unit": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "event_type": { "const": "medication_administered" } } },
+      "then": {
+        "properties": {
+          "fields": {
+            "type": "object",
+            "required": ["medication_name", "rxnorm_code", "dose_value", "dose_unit", "route"],
+            "properties": {
+              "medication_name": { "type": "string" },
+              "rxnorm_code": { "type": "string" },
+              "dose_value": { "type": "number", "exclusiveMinimum": 0 },
+              "dose_unit": {
+                "type": "string",
+                "enum": ["mg", "mcg", "g", "ml", "unit"]
+              },
+              "route": {
+                "type": "string",
+                "enum": [
+                  "iv",
+                  "im",
+                  "po",
+                  "sublingual",
+                  "topical",
+                  "inhaled",
+                  "intranasal",
+                  "rectal",
+                  "subcutaneous"
+                ]
+              },
+              "indication": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "event_type": { "const": "dispo" } } },
+      "then": {
+        "properties": {
+          "fields": {
+            "type": "object",
+            "required": ["disposition_type"],
+            "properties": {
+              "disposition_type": {
+                "type": "string",
+                "enum": [
+                  "discharge_home",
+                  "transfer_to_hospital",
+                  "admit_observation",
+                  "transfer_to_floor"
+                ]
+              },
+              "discharge_criteria_met": { "type": "boolean" },
+              "notes": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "event_type": { "const": "note" } } },
+      "then": {
+        "properties": {
+          "fields": {
+            "type": "object",
+            "required": ["note_text"],
+            "properties": {
+              "note_text": { "type": "string" },
+              "tags": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

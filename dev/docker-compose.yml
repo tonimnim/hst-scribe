@@ -1,0 +1,68 @@
+name: hst-scribe-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hst-scribe-postgres
+    environment:
+      POSTGRES_USER: hst
+      POSTGRES_PASSWORD: hst
+      POSTGRES_DB: hst_scribe
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./seed/postgres-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hst -d hst_scribe"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  nats:
+    image: nats:2.10-alpine
+    container_name: hst-scribe-nats
+    command:
+      - "--jetstream"
+      - "--store_dir=/data"
+      - "--http_port=8222"
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    volumes:
+      - nats_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8222/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Placeholder — scaffolded in its own session.
+  # Comment out until ./mock-echart exists.
+  # mock-echart:
+  #   build:
+  #     context: ./mock-echart
+  #   container_name: hst-scribe-mock-echart
+  #   ports:
+  #     - "8081:8080"
+  #   environment:
+  #     PORT: "8080"
+  #     SEED_PATH: "/seed/patients.json"
+  #   volumes:
+  #     - ./seed:/seed:ro
+
+  # mock-asr:
+  #   build:
+  #     context: ./mock-asr
+  #   container_name: hst-scribe-mock-asr
+  #   ports:
+  #     - "8082:8080"
+  #   environment:
+  #     PORT: "8080"
+  #     UTTERANCES_PATH: "/seed/utterances.json"
+  #   volumes:
+  #     - ./seed:/seed:ro
+
+volumes:
+  postgres_data:
+  nats_data:
