@@ -39,15 +39,15 @@ const (
 // shape mirrors columns on audit_log (migration 0006) so the audit
 // service can persist it with minimal transformation.
 type AuditEvent struct {
-	ID           string         `json:"id"`
-	SessionID    string         `json:"session_id"`
-	ActorUserID  string         `json:"actor_user_id,omitempty"`
-	ASCID        string         `json:"asc_id"`
-	Action       AuditAction    `json:"action"`
-	TargetID     string         `json:"target_id,omitempty"`
-	TargetType   string         `json:"target_type,omitempty"`
-	Payload      map[string]any `json:"payload"`
-	TS           time.Time      `json:"ts"`
+	ID          string         `json:"id"`
+	SessionID   string         `json:"session_id"`
+	ActorUserID string         `json:"actor_user_id,omitempty"`
+	ASCID       string         `json:"asc_id"`
+	Action      AuditAction    `json:"action"`
+	TargetID    string         `json:"target_id,omitempty"`
+	TargetType  string         `json:"target_type,omitempty"`
+	Payload     map[string]any `json:"payload"`
+	TS          time.Time      `json:"ts"`
 }
 
 // AuditPublisher is the audit emission seam. The NATS implementation

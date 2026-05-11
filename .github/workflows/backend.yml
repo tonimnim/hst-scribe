@@ -114,6 +114,16 @@ jobs:
       - name: Download modules
         run: go mod download
 
+      - name: Install goose (migration runner)
+        run: go install github.com/pressly/goose/v3/cmd/goose@latest
+
+      - name: Apply migrations
+        env:
+          GOOSE_DRIVER: postgres
+          GOOSE_DBSTRING: ${{ env.POSTGRES_DSN }}
+          GOOSE_MIGRATION_DIR: ./migrations
+        run: goose up
+
       - name: Run tests
         # `make test` runs `go test -race -cover ./...`. We additionally write
         # a coverprofile so we can publish it as an artifact.

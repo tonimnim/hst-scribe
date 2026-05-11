@@ -24,13 +24,13 @@ import (
 //   - transcripts.{session_id}          published by asr-orchestrator
 //   - extracted.events.{session_id}     published by extraction-worker
 const (
-	subjAudioChunks       = "audio.chunks.%s"
-	subjActivity          = "sessions.activity.%s"
-	subjExtractedConfirm  = "extracted.confirmed.%s"
-	subjExtractedReject   = "extracted.rejected.%s"
-	subjChartSign         = "chart.sign.%s"
-	subjTranscripts       = "transcripts.%s"
-	subjExtractedEvents   = "extracted.events.%s"
+	subjAudioChunks      = "audio.chunks.%s"
+	subjActivity         = "sessions.activity.%s"
+	subjExtractedConfirm = "extracted.confirmed.%s"
+	subjExtractedReject  = "extracted.rejected.%s"
+	subjChartSign        = "chart.sign.%s"
+	subjTranscripts      = "transcripts.%s"
+	subjExtractedEvents  = "extracted.events.%s"
 )
 
 // Publisher is the small subset of NATS the gateway needs for one-shot

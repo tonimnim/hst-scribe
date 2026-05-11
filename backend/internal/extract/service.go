@@ -81,8 +81,8 @@ type Service struct {
 // sessionWindow holds the rolling transcript window and cached patient
 // context for one active session.
 type sessionWindow struct {
-	mu         sync.Mutex
-	patientCtx *contract.PatientContext
+	mu          sync.Mutex
+	patientCtx  *contract.PatientContext
 	transcripts []TranscriptWindowEntry
 }
 

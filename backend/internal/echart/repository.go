@@ -230,5 +230,5 @@ func isUniqueViolation(err error) bool {
 // Compile-time check.
 var (
 	_ Repository = (*PGRepository)(nil)
-	_           = pgx.ErrNoRows // keep import for future read-path methods
+	_            = pgx.ErrNoRows // keep import for future read-path methods
 )

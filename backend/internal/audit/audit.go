@@ -30,18 +30,18 @@ type Action string
 
 // Action values. Keep aligned with backend/PRD.md FR28.
 const (
-	ActionSessionCreated       Action = "session_created"
-	ActionSessionEnded         Action = "session_ended"
-	ActionSessionSigned        Action = "session_signed"
-	ActionEventExtracted       Action = "event_extracted"
-	ActionEventConfirmed       Action = "event_confirmed"
-	ActionEventRejected        Action = "event_rejected"
-	ActionEventEdited          Action = "event_edited"
-	ActionChunkReceived        Action = "chunk_received"
-	ActionTranscriptFinal      Action = "transcript_final"
-	ActionChartWriteAttempted  Action = "chart_write_attempted"
-	ActionChartWriteSucceeded  Action = "chart_write_succeeded"
-	ActionChartWriteFailed     Action = "chart_write_failed"
+	ActionSessionCreated      Action = "session_created"
+	ActionSessionEnded        Action = "session_ended"
+	ActionSessionSigned       Action = "session_signed"
+	ActionEventExtracted      Action = "event_extracted"
+	ActionEventConfirmed      Action = "event_confirmed"
+	ActionEventRejected       Action = "event_rejected"
+	ActionEventEdited         Action = "event_edited"
+	ActionChunkReceived       Action = "chunk_received"
+	ActionTranscriptFinal     Action = "transcript_final"
+	ActionChartWriteAttempted Action = "chart_write_attempted"
+	ActionChartWriteSucceeded Action = "chart_write_succeeded"
+	ActionChartWriteFailed    Action = "chart_write_failed"
 )
 
 // IsValid reports whether a is one of the recognized Action values.

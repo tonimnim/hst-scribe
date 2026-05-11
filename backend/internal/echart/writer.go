@@ -268,8 +268,8 @@ func (w *Writer) Run(ctx context.Context) error {
 	}
 
 	cons, err := stream.CreateOrUpdateConsumer(ctx, jetstream.ConsumerConfig{
-		Durable:       DurableName,
-		Name:          DurableName,
+		Durable: DurableName,
+		Name:    DurableName,
 		FilterSubjects: []string{
 			SubjectExtractedConfirmed,
 			SubjectExtractedRejected,
@@ -515,10 +515,10 @@ func (w *Writer) markAndDLQ(ctx context.Context, ev ConfirmedEvent, attempts int
 	}
 
 	dlqPayload := struct {
-		Reason   string          `json:"reason"`
-		Attempts int             `json:"attempts"`
-		EnqueuedAt time.Time     `json:"enqueued_at"`
-		Original ConfirmedEvent  `json:"original"`
+		Reason     string         `json:"reason"`
+		Attempts   int            `json:"attempts"`
+		EnqueuedAt time.Time      `json:"enqueued_at"`
+		Original   ConfirmedEvent `json:"original"`
 	}{
 		Reason:     errMsg,
 		Attempts:   attempts,

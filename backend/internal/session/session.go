@@ -83,19 +83,19 @@ func (w WorkflowType) Valid() bool {
 // JSON tags match the internal API exposed by server.go; the gateway
 // composes the public CreateSessionResponse from this plus patient context.
 type Session struct {
-	ID              string       `json:"session_id"`
-	ASCID           string       `json:"asc_id"`
-	PatientID       string       `json:"patient_id"`
-	UserID          string       `json:"user_id"`
-	WorkflowType    WorkflowType `json:"workflow_type"`
-	Status          Status       `json:"status"`
-	Reason          string       `json:"reason,omitempty"`
-	StartedAt       time.Time    `json:"started_at"`
-	LastActivityAt  time.Time    `json:"last_activity_at"`
-	EndedAt         *time.Time   `json:"ended_at,omitempty"`
-	SignedAt        *time.Time   `json:"signed_at,omitempty"`
-	ExpiresAt       time.Time    `json:"expires_at"`
-	SignedByUserID  string       `json:"signed_by_user_id,omitempty"`
+	ID             string       `json:"session_id"`
+	ASCID          string       `json:"asc_id"`
+	PatientID      string       `json:"patient_id"`
+	UserID         string       `json:"user_id"`
+	WorkflowType   WorkflowType `json:"workflow_type"`
+	Status         Status       `json:"status"`
+	Reason         string       `json:"reason,omitempty"`
+	StartedAt      time.Time    `json:"started_at"`
+	LastActivityAt time.Time    `json:"last_activity_at"`
+	EndedAt        *time.Time   `json:"ended_at,omitempty"`
+	SignedAt       *time.Time   `json:"signed_at,omitempty"`
+	ExpiresAt      time.Time    `json:"expires_at"`
+	SignedByUserID string       `json:"signed_by_user_id,omitempty"`
 }
 
 // CreateArgs is the input to Repository.Create / Service.CreateSession.

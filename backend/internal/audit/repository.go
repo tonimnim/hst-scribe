@@ -178,12 +178,12 @@ func scanEvents(rows pgx.Rows) ([]Event, error) {
 	out := make([]Event, 0, 32)
 	for rows.Next() {
 		var (
-			e              Event
-			sessionID      *string
-			actorUserID    *string
-			targetID       *string
-			targetType     *string
-			payloadRaw     []byte
+			e           Event
+			sessionID   *string
+			actorUserID *string
+			targetID    *string
+			targetType  *string
+			payloadRaw  []byte
 		)
 		if err := rows.Scan(
 			&e.ID,
@@ -296,4 +296,3 @@ func splitOnce(s, sep string) []string {
 	}
 	return []string{s}
 }
-

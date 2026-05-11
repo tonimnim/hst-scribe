@@ -63,12 +63,12 @@ func TestDecodeEnvelope_Rejects(t *testing.T) {
 	t.Parallel()
 
 	cases := map[string]string{
-		"empty body":         ``,
-		"missing id":         `{"asc_id":"a","action":"session_created","ts":"2026-05-11T14:32:18Z"}`,
-		"missing asc_id":     `{"id":"x","action":"session_created","ts":"2026-05-11T14:32:18Z"}`,
-		"missing ts":         `{"id":"x","asc_id":"a","action":"session_created"}`,
-		"unknown action":     `{"id":"x","asc_id":"a","action":"obliterate","ts":"2026-05-11T14:32:18Z"}`,
-		"invalid json":       `{not json`,
+		"empty body":     ``,
+		"missing id":     `{"asc_id":"a","action":"session_created","ts":"2026-05-11T14:32:18Z"}`,
+		"missing asc_id": `{"id":"x","action":"session_created","ts":"2026-05-11T14:32:18Z"}`,
+		"missing ts":     `{"id":"x","asc_id":"a","action":"session_created"}`,
+		"unknown action": `{"id":"x","asc_id":"a","action":"obliterate","ts":"2026-05-11T14:32:18Z"}`,
+		"invalid json":   `{not json`,
 	}
 	for name, body := range cases {
 		body := body

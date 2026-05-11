@@ -69,7 +69,7 @@ func (c *EChartClient) GetPatientContext(ctx context.Context, patientID string) 
 	if err != nil {
 		return nil, fmt.Errorf("echart get patient context: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, httperr.BadRequest("patient not found in echart", map[string]any{
@@ -122,7 +122,7 @@ func (c *EChartClient) PostDraftEvent(ctx context.Context, patientID string, in 
 	if err != nil {
 		return fmt.Errorf("echart post draft event: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 16*1024))
 		return fmt.Errorf("echart returned %d: %s", resp.StatusCode, string(body))

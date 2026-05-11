@@ -47,7 +47,7 @@ import (
 )
 
 const (
-	serviceName    = "asr-orchestrator"
+	serviceName     = "asr-orchestrator"
 	defaultHTTPAddr = ":8082"
 )
 
@@ -66,9 +66,9 @@ type providerConfig struct {
 	MockAuthToken string `env:"MOCK_ASR_TOKEN" envDefault:"dev"`
 
 	// AWSRegion / Language / Specialty are reserved for Phase 2.
-	AWSRegion        string `env:"AWS_REGION" envDefault:"us-east-1"`
-	AWSLanguageCode  string `env:"ASR_LANGUAGE_CODE" envDefault:"en-US"`
-	AWSSpecialty     string `env:"ASR_SPECIALTY" envDefault:"PRIMARYCARE"`
+	AWSRegion       string `env:"AWS_REGION" envDefault:"us-east-1"`
+	AWSLanguageCode string `env:"ASR_LANGUAGE_CODE" envDefault:"en-US"`
+	AWSSpecialty    string `env:"ASR_SPECIALTY" envDefault:"PRIMARYCARE"`
 }
 
 func main() {

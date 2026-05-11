@@ -27,7 +27,7 @@ defaults:
 env:
   # pubspec declares `flutter: ">=3.41.0"`. We pin the lowest known-good
   # stable here; bump deliberately when we bump the floor in pubspec.yaml.
-  FLUTTER_VERSION: '3.41.0'
+  FLUTTER_VERSION: '3.41.9'
   FLUTTER_CHANNEL: stable
 
 jobs:

@@ -37,12 +37,12 @@ const sessionColumns = `id, asc_id, patient_id, user_id, workflow_type, status,
 // are returned wrapped with context.
 func scanSession(row pgx.Row) (*Session, error) {
 	var (
-		s         Session
-		endedAt   *time.Time
-		signedAt  *time.Time
-		signedBy  *string
-		workflow  string
-		status    string
+		s        Session
+		endedAt  *time.Time
+		signedAt *time.Time
+		signedBy *string
+		workflow string
+		status   string
 	)
 	if err := row.Scan(
 		&s.ID, &s.ASCID, &s.PatientID, &s.UserID, &workflow, &status,

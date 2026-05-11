@@ -15,7 +15,7 @@
 //   - httpclient.go  — HTTP implementation of Client with retry + DLQ routing.
 //   - repository.go  — chart_writes table accessor (pgx).
 //   - writer.go      — NATS-driven Writer service: handlers for confirmed,
-//                      rejected, and sign subjects; idempotency; audit + DLQ.
+//     rejected, and sign subjects; idempotency; audit + DLQ.
 //
 // PHI guardrails: this package never logs source_utterance, fields, or
 // transcript text. Identifiers (session_id, event_id, patient_id,

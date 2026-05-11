@@ -456,11 +456,11 @@ func (s *Service) publishASRFailure(sessionID string, cause error) {
 	// only filters on `audit.events.>` so this is safely captured.
 	subject := fmt.Sprintf(AuditEventsSubjectFmt, "session."+sessionID)
 	payload := map[string]any{
-		"id":         uuidv7.New(),
-		"session_id": sessionID,
-		"asc_id":     "",
-		"action":     "session_ended",
-		"target_id":  sessionID,
+		"id":          uuidv7.New(),
+		"session_id":  sessionID,
+		"asc_id":      "",
+		"action":      "session_ended",
+		"target_id":   sessionID,
 		"target_type": "session",
 		"payload": map[string]any{
 			"reason": "asr_failed",

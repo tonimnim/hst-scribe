@@ -53,14 +53,14 @@ type doseSanityRule struct {
 }
 
 var doseSanityRules = []doseSanityRule{
-	{RxNormCode: "7052", Unit: contract.DoseMg, MaxValue: 50},      // morphine
-	{RxNormCode: "4337", Unit: contract.DoseMcg, MaxValue: 500},    // fentanyl
-	{RxNormCode: "6960", Unit: contract.DoseMg, MaxValue: 20},      // midazolam
-	{RxNormCode: "8782", Unit: contract.DoseMg, MaxValue: 500},     // propofol single bolus
-	{RxNormCode: "26225", Unit: contract.DoseMg, MaxValue: 16},     // ondansetron
-	{RxNormCode: "35827", Unit: contract.DoseMg, MaxValue: 60},     // ketorolac
-	{RxNormCode: "161", Unit: contract.DoseMg, MaxValue: 1000},     // acetaminophen
-	{RxNormCode: "3264", Unit: contract.DoseMg, MaxValue: 10},      // dexamethasone
+	{RxNormCode: "7052", Unit: contract.DoseMg, MaxValue: 50},   // morphine
+	{RxNormCode: "4337", Unit: contract.DoseMcg, MaxValue: 500}, // fentanyl
+	{RxNormCode: "6960", Unit: contract.DoseMg, MaxValue: 20},   // midazolam
+	{RxNormCode: "8782", Unit: contract.DoseMg, MaxValue: 500},  // propofol single bolus
+	{RxNormCode: "26225", Unit: contract.DoseMg, MaxValue: 16},  // ondansetron
+	{RxNormCode: "35827", Unit: contract.DoseMg, MaxValue: 60},  // ketorolac
+	{RxNormCode: "161", Unit: contract.DoseMg, MaxValue: 1000},  // acetaminophen
+	{RxNormCode: "3264", Unit: contract.DoseMg, MaxValue: 10},   // dexamethasone
 }
 
 // EventValidator post-processes a slice of extracted events:

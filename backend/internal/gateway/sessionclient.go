@@ -62,14 +62,14 @@ func NewSessionManagerClient(opts SessionManagerOptions) (*SessionManagerClient,
 // session. The session-manager owns the canonical shape; this struct
 // mirrors only the fields the gateway needs.
 type SessionSummary struct {
-	SessionID    string    `json:"session_id"`
-	PatientID    string    `json:"patient_id"`
-	ASCID        string    `json:"asc_id"`
-	UserID       string    `json:"user_id"`
-	WorkflowType string    `json:"workflow_type"`
-	Status       string    `json:"status"`
-	StartedAt    time.Time `json:"started_at"`
-	ExpiresAt    time.Time `json:"expires_at"`
+	SessionID    string     `json:"session_id"`
+	PatientID    string     `json:"patient_id"`
+	ASCID        string     `json:"asc_id"`
+	UserID       string     `json:"user_id"`
+	WorkflowType string     `json:"workflow_type"`
+	Status       string     `json:"status"`
+	StartedAt    time.Time  `json:"started_at"`
+	ExpiresAt    time.Time  `json:"expires_at"`
 	EndedAt      *time.Time `json:"ended_at,omitempty"`
 	SignedAt     *time.Time `json:"signed_at,omitempty"`
 }
@@ -157,7 +157,7 @@ func (c *SessionManagerClient) doJSON(ctx context.Context, method, path string, 
 	if err != nil {
 		return fmt.Errorf("session-manager %s %s: %w", method, path, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		if respBody == nil || resp.StatusCode == http.StatusNoContent {

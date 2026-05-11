@@ -15,9 +15,9 @@ import (
 // path is responsible for calling Drop; otherwise a sweeper would be
 // needed — out of scope for Wave 1.)
 type SessionRegistry struct {
-	mu       sync.Mutex
-	buffers  map[string]*ReplayBuffer
-	live     map[string]*sessionConn
+	mu      sync.Mutex
+	buffers map[string]*ReplayBuffer
+	live    map[string]*sessionConn
 }
 
 // NewSessionRegistry returns an empty registry.
