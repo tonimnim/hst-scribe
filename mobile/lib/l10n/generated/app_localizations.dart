@@ -297,6 +297,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Something went wrong. Please try again.'**
   String get errorUnexpected;
+
+  /// No description provided for @loginDevModeBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Dev mode — using fake authentication'**
+  String get loginDevModeBanner;
+
+  /// No description provided for @sessionListSignedInAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in as'**
+  String get sessionListSignedInAs;
+
+  /// No description provided for @sessionListSignOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get sessionListSignOut;
+
+  /// No description provided for @sessionStartCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create session'**
+  String get sessionStartCreate;
+
+  /// No description provided for @sessionStartRescan.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan again'**
+  String get sessionStartRescan;
+
+  /// No description provided for @sessionStartClearScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear scan'**
+  String get sessionStartClearScan;
+
+  /// No description provided for @sessionStartScannedSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanned'**
+  String get sessionStartScannedSuffix;
+
+  /// No description provided for @sessionStartScannerError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read the QR code. Try again.'**
+  String get sessionStartScannerError;
+
+  /// No description provided for @sessionStartScannerHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Point the camera at the patient\'s wristband QR code.'**
+  String get sessionStartScannerHelp;
+
+  /// No description provided for @sessionPatientConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm patient'**
+  String get sessionPatientConfirm;
+
+  /// No description provided for @patientContext.
+  ///
+  /// In en, this message translates to:
+  /// **'Patient context'**
+  String get patientContext;
+
+  /// No description provided for @patientConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm patient'**
+  String get patientConfirmTitle;
+
+  /// No description provided for @patientConfirmProcedureSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Procedure'**
+  String get patientConfirmProcedureSection;
+
+  /// No description provided for @patientConfirmAllergiesSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Allergies'**
+  String get patientConfirmAllergiesSection;
+
+  /// No description provided for @patientConfirmAllergiesNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No known allergies'**
+  String get patientConfirmAllergiesNone;
+
+  /// No description provided for @patientConfirmMedsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Current medications'**
+  String get patientConfirmMedsSection;
+
+  /// No description provided for @patientConfirmMedsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None on file'**
+  String get patientConfirmMedsNone;
+
+  /// No description provided for @patientConfirmComorbiditiesSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Comorbidities'**
+  String get patientConfirmComorbiditiesSection;
+
+  /// No description provided for @patientConfirmYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, this is the patient'**
+  String get patientConfirmYes;
+
+  /// No description provided for @patientConfirmNo.
+  ///
+  /// In en, this message translates to:
+  /// **'No, scan again'**
+  String get patientConfirmNo;
 }
 
 class _AppLocalizationsDelegate

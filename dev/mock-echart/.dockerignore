@@ -1,0 +1,7 @@
+# Keep the build context small and reproducible.
+Dockerfile
+.dockerignore
+*.md
+.git
+.gitignore
+**/*_test.go

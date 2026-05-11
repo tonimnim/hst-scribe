@@ -33,8 +33,10 @@ dependencies:
   # Secure storage (tokens + active session PHI)
   flutter_secure_storage: ^9.2.2
 
-  # Biometric sign-off
-  local_auth: ^2.3.0
+  # Biometric sign-off — re-add in Wave 2 (sign feature). local_auth 2.3.x
+  # pulls in objective_c 9.x which forces the native-assets experiment and
+  # breaks build_runner on Windows. Wave 1 only stubs the sign flow.
+  # local_auth: ^2.3.0
 
   # Wristband QR scanning
   mobile_scanner: ^6.0.2
@@ -45,8 +47,10 @@ dependencies:
   # REST client
   dio: ^5.7.0
 
-  # Crash reporting (scrubbed)
-  sentry_flutter: ^8.11.0
+  # Crash reporting (scrubbed) — re-add in Wave 2 when we have a DSN.
+  # sentry_flutter pulls in path_provider_foundation → objective_c 9.x →
+  # native-assets experiment, which breaks build_runner on Windows hosts.
+  # sentry_flutter: ^8.11.0
 
   # Structured logging
   logger: ^2.5.0

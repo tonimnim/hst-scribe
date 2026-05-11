@@ -114,4 +114,66 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorUnexpected => 'Something went wrong. Please try again.';
+
+  @override
+  String get loginDevModeBanner => 'Dev mode — using fake authentication';
+
+  @override
+  String get sessionListSignedInAs => 'Signed in as';
+
+  @override
+  String get sessionListSignOut => 'Sign out';
+
+  @override
+  String get sessionStartCreate => 'Create session';
+
+  @override
+  String get sessionStartRescan => 'Scan again';
+
+  @override
+  String get sessionStartClearScan => 'Clear scan';
+
+  @override
+  String get sessionStartScannedSuffix => 'Scanned';
+
+  @override
+  String get sessionStartScannerError =>
+      'Could not read the QR code. Try again.';
+
+  @override
+  String get sessionStartScannerHelp =>
+      'Point the camera at the patient\'s wristband QR code.';
+
+  @override
+  String get sessionPatientConfirm => 'Confirm patient';
+
+  @override
+  String get patientContext => 'Patient context';
+
+  @override
+  String get patientConfirmTitle => 'Confirm patient';
+
+  @override
+  String get patientConfirmProcedureSection => 'Procedure';
+
+  @override
+  String get patientConfirmAllergiesSection => 'Allergies';
+
+  @override
+  String get patientConfirmAllergiesNone => 'No known allergies';
+
+  @override
+  String get patientConfirmMedsSection => 'Current medications';
+
+  @override
+  String get patientConfirmMedsNone => 'None on file';
+
+  @override
+  String get patientConfirmComorbiditiesSection => 'Comorbidities';
+
+  @override
+  String get patientConfirmYes => 'Yes, this is the patient';
+
+  @override
+  String get patientConfirmNo => 'No, scan again';
 }

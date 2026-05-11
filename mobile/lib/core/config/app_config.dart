@@ -48,6 +48,8 @@ class AppConfig {
     required this.idpRedirectUri,
     required this.appLockIdleTimeout,
     required this.sessionIdleTimeout,
+    required this.useFakeAuth,
+    required this.devJwtSecret,
   });
 
   /// Build config from `--dart-define` values.
@@ -89,11 +91,26 @@ class AppConfig {
       'IDP_REDIRECT_URI',
       defaultValue: 'com.hstpathways.hstscribe://oauth/callback',
     );
+    const useFakeAuthRaw = String.fromEnvironment(
+      'USE_FAKE_AUTH',
+      defaultValue: '',
+    );
+    const devJwtSecret = String.fromEnvironment(
+      'DEV_JWT_SECRET',
+      defaultValue: 'dev-secret-do-not-use-in-prod',
+    );
+
+    final environment = AppEnvironment.fromString(environmentRaw);
+    // Default: fake auth ON in dev, OFF in staging/prod. `--dart-define
+    // USE_FAKE_AUTH=true|false` overrides explicitly.
+    final useFakeAuth = useFakeAuthRaw.isEmpty
+        ? environment == AppEnvironment.dev
+        : useFakeAuthRaw.toLowerCase() == 'true';
 
     return AppConfig(
       apiBaseUrl: apiBaseUrl,
       wssBaseUrl: wssBaseUrl,
-      environment: AppEnvironment.fromString(environmentRaw),
+      environment: environment,
       sentryDsn: sentryDsn,
       idpClientId: idpClientId,
       idpAuthorizationUrl: idpAuthorizationUrl,
@@ -101,6 +118,8 @@ class AppConfig {
       idpRedirectUri: idpRedirectUri,
       appLockIdleTimeout: const Duration(minutes: 5),
       sessionIdleTimeout: const Duration(minutes: 30),
+      useFakeAuth: useFakeAuth,
+      devJwtSecret: devJwtSecret,
     );
   }
 
@@ -134,6 +153,18 @@ class AppConfig {
 
   /// FR — Session auto-ends after this much idle (with warning 5min prior).
   final Duration sessionIdleTimeout;
+
+  /// When true, the auth flow uses [DevFakeOauthPkceFlow] and mints a local
+  /// HS256 JWT signed with [devJwtSecret] instead of round-tripping to an
+  /// IdP. Defaults to `true` in dev and `false` everywhere else.
+  ///
+  /// **Hard rule:** must be `false` in prod. The build pipeline asserts this.
+  final bool useFakeAuth;
+
+  /// Shared secret used by [DevFakeOauthPkceFlow] to sign the local JWT.
+  /// Matches the dev gateway's `DEV_JWT_SECRET` env so the fake token validates.
+  /// Never used in staging or prod.
+  final String devJwtSecret;
 
   bool get isProd => environment == AppEnvironment.prod;
   bool get isDev => environment == AppEnvironment.dev;

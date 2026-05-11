@@ -1,0 +1,165 @@
+name: backend
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'contract/**'
+      - '.github/workflows/backend.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'contract/**'
+      - '.github/workflows/backend.yml'
+
+# Cancel superseded runs on the same ref. `main` pushes are never cancelled
+# because the ref is unique per push and we never want to lose a green main.
+concurrency:
+  group: backend-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  GO_VERSION: '1.24'
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    # Don't block test visibility: lint failures show up alongside test failures.
+    continue-on-error: false
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          # setup-go's built-in cache keys on go.sum under cache-dependency-path.
+          cache: true
+          cache-dependency-path: backend/go.sum
+
+      - name: Download modules
+        run: go mod download
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: latest
+          working-directory: backend
+          # Action runs `golangci-lint run` for us; pass args for ./... target.
+          args: --timeout=5m ./...
+          # The action manages its own cache layer keyed on config + go version.
+          skip-cache: false
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    # Tests run independently of lint so developers see both signals in one PR pass.
+    needs: []
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: hst
+          POSTGRES_PASSWORD: hst
+          POSTGRES_DB: hst_scribe
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hst -d hst_scribe"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      nats:
+        image: nats:2.10-alpine
+        ports:
+          - 4222:4222
+          - 8222:8222
+        options: >-
+          --health-cmd "wget --spider -q http://localhost:8222/healthz"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      # Service connection strings — tests that need them can read from env.
+      # No secrets here; these are ephemeral CI-local services.
+      POSTGRES_DSN: postgres://hst:hst@localhost:5432/hst_scribe?sslmode=disable
+      NATS_URL: nats://localhost:4222
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: backend/go.sum
+
+      - name: Download modules
+        run: go mod download
+
+      - name: Run tests
+        # `make test` runs `go test -race -cover ./...`. We additionally write
+        # a coverprofile so we can publish it as an artifact.
+        run: |
+          go test -race -covermode=atomic -coverprofile=coverage.out ./...
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage.out
+          if-no-files-found: warn
+          retention-days: 14
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: backend/go.sum
+
+      - name: Download modules
+        run: go mod download
+
+      - name: Build all packages
+        run: make build
+
+      - name: Build each service binary (smoke)
+        # Catch service-specific build breakage (linker errors, missing main,
+        # etc.) that `go build ./...` would otherwise paper over.
+        run: |
+          mkdir -p dist
+          for svc in cmd/*/; do
+            name="$(basename "$svc")"
+            echo "==> building $name"
+            go build -o "dist/$name" "./$svc"
+          done
+          ls -la dist/
