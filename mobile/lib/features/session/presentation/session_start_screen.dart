@@ -295,6 +295,7 @@ class _WristbandScannerPageState extends State<_WristbandScannerPage> {
   Widget _errorBuilder(
     BuildContext context,
     MobileScannerException error,
+    Widget? child,
   ) {
     final l10n = AppLocalizations.of(context);
     return Center(

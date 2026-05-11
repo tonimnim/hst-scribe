@@ -1,14 +1,23 @@
 // Package auth validates JWT bearer tokens for HST Scribe services.
 //
-// Phase 0 uses HMAC (HS256) against config.JWTSecret for local/pilot.
-// Phase B will swap this for JWKS-backed RS256/ES256 from the HST IdP;
-// the Validator interface is the extension point.
+// Two validator paths are wired into the gateway:
+//
+//   - HMACValidator validates HS256 tokens against config.JWTSecret. It
+//     is the local/dev default and the only path used in unit tests.
+//   - JWKSValidator validates RS256/ES256 tokens against a remote JWKS
+//     document published by the HST IdP. It is the production path.
+//
+// In environments where both are configured, MultiValidator tries the
+// JWKS path first and falls back to HMAC only in dev — production
+// surfaces the primary error directly and never lets a dev-minted token
+// in.
 package auth
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -118,6 +127,53 @@ func (v *HMACValidator) Validate(_ context.Context, bearer string) (*Claims, err
 		Subject:   sub,
 		ExpiresAt: exp.Time,
 	}, nil
+}
+
+// --- MultiValidator: JWKS primary with HMAC fallback in dev ---
+
+// MultiValidator tries Primary first; on failure it falls back to
+// Fallback iff Env == dev. In staging/prod the Primary error is
+// returned directly so a leaked dev secret can never validate a token.
+type MultiValidator struct {
+	Primary  Validator
+	Fallback Validator
+	Env      config.Env
+	Logger   *slog.Logger
+}
+
+// Validate implements Validator. The fallback path is only attempted in
+// dev so non-dev environments fail closed if JWKS itself is the
+// configured path.
+func (m MultiValidator) Validate(ctx context.Context, bearer string) (*Claims, error) {
+	if m.Primary == nil {
+		if m.Fallback == nil {
+			return nil, httperr.AuthInvalid("no validator configured")
+		}
+		return m.Fallback.Validate(ctx, bearer)
+	}
+
+	c, err := m.Primary.Validate(ctx, bearer)
+	if err == nil {
+		return c, nil
+	}
+	if m.Fallback == nil || m.Env != config.EnvDev {
+		return nil, err
+	}
+
+	fc, ferr := m.Fallback.Validate(ctx, bearer)
+	if ferr != nil {
+		// Surface the primary error: it's the canonical configured
+		// path. Fallback is a dev convenience, not a parallel system.
+		return nil, err
+	}
+	if m.Logger != nil {
+		m.Logger.Warn("auth: dev HMAC fallback accepted a token rejected by JWKS",
+			slog.String("user_id", fc.UserID),
+			slog.String("asc_id", fc.ASCID),
+			slog.String("role", string(fc.Role)),
+		)
+	}
+	return fc, nil
 }
 
 // --- context plumbing ---

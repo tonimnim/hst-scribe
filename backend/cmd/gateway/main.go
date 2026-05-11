@@ -18,6 +18,7 @@ import (
 	"github.com/caarlos0/env/v11"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/tonimnim/hst-scribe/backend/cmd/gateway/handlers"
 	"github.com/tonimnim/hst-scribe/backend/internal/auth"
@@ -94,6 +95,28 @@ func run() error {
 
 	rootCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	// Tracing first: every downstream constructor below may emit spans,
+	// and inter-service HTTP clients need the global propagator wired.
+	tracingCfg := obs.TracingConfig{ServiceName: cfg.ServiceName, Env: string(cfg.Env)}
+	shutdownTracing, err := obs.InitTracing(rootCtx, tracingCfg)
+	if err != nil {
+		return fmt.Errorf("init tracing: %w", err)
+	}
+	obs.LogTracingInit(logger, tracingCfg)
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := shutdownTracing(shutdownCtx); err != nil {
+			logger.Warn("tracing shutdown", slog.String("err", err.Error()))
+		}
+	}()
+
+	// Inter-service HTTP clients in gateway/* construct http.Client values
+	// without an explicit Transport, so they pick up http.DefaultTransport.
+	// Wrapping the default transport here propagates W3C traceparent on
+	// gateway → session-manager and gateway → eChart calls. One-line wrap.
+	http.DefaultTransport = otelhttp.NewTransport(http.DefaultTransport)
 
 	nc, err := natsbroker.NewConn(rootCtx, cfg, logger)
 	if err != nil {
@@ -172,10 +195,13 @@ func run() error {
 func buildRouter(logger *slog.Logger, validator auth.Validator, rest *handlers.REST, ws *gateway.WSServer) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
+	r.Use(obs.TracingMiddleware("gateway"))
 	r.Use(obs.LoggingMiddleware(logger))
+	r.Use(obs.MetricsMiddleware("gateway"))
 	r.Use(httperr.Recoverer(logger))
 
 	r.Get("/healthz", healthHandler)
+	obs.MountMetrics(r)
 
 	// Authenticated REST surface.
 	r.Route("/api/v1", func(r chi.Router) {

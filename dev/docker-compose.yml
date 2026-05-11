@@ -1,5 +1,32 @@
 name: hst-scribe-dev
 
+# Wave 1 end-to-end stack: Postgres + NATS JetStream + 2 mocks + 6 Go
+# services + a one-shot migration init container.
+#
+# Service ports (host:container):
+#   5432  postgres
+#   4222  nats client
+#   8222  nats monitoring
+#   8090  mock-echart
+#   8091  mock-asr
+#   8080  gateway        (public REST + WSS)
+#   8081  session-manager
+#   8082  asr-orchestrator
+#   8083  extraction-worker
+#   8084  chart-writer
+#   8085  audit
+#
+# Startup order is enforced via depends_on:
+#   postgres + nats come up healthy → migrate runs once → backend services
+#   start (each gates on migrate having completed successfully).
+#
+# Inter-service auth in dev: INTERNAL_SVC_TOKEN is set on gateway (so it
+# sends the header) but intentionally left empty on session-manager
+# (session-manager's middleware is fail-open when the token is empty AND
+# ENV=dev). The gateway uses Authorization: Bearer while session-manager
+# expects X-Internal-Token — they only line up because the dev fail-open
+# path skips the check. Real auth wiring is a Wave 2 follow-up.
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -37,31 +64,208 @@ services:
       timeout: 3s
       retries: 10
 
-  # Placeholder — scaffolded in its own session.
-  # Comment out until ./mock-echart exists.
-  # mock-echart:
-  #   build:
-  #     context: ./mock-echart
-  #   container_name: hst-scribe-mock-echart
-  #   ports:
-  #     - "8081:8080"
-  #   environment:
-  #     PORT: "8080"
-  #     SEED_PATH: "/seed/patients.json"
-  #   volumes:
-  #     - ./seed:/seed:ro
+  # One-shot schema bootstrap. Runs goose `up` against the freshly-created
+  # postgres database, then exits 0. Every backend service gates on
+  # `service_completed_successfully` so they never see a half-applied schema.
+  migrate:
+    build:
+      context: ./migrate
+    container_name: hst-scribe-migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ../backend/migrations:/migrations:ro
+    # goose uses the in-container hostname `postgres` to reach the DB.
+    # sslmode=disable is the dev convention; production deployments
+    # always run TLS.
+    command:
+      - "-dir"
+      - "/migrations"
+      - "postgres"
+      - "postgres://hst:hst@postgres:5432/hst_scribe?sslmode=disable"
+      - "up"
+    restart: "no"
 
-  # mock-asr:
-  #   build:
-  #     context: ./mock-asr
-  #   container_name: hst-scribe-mock-asr
-  #   ports:
-  #     - "8082:8080"
-  #   environment:
-  #     PORT: "8080"
-  #     UTTERANCES_PATH: "/seed/utterances.json"
-  #   volumes:
-  #     - ./seed:/seed:ro
+  # --- mocks ---------------------------------------------------------------
+  #
+  # Both mocks run distroless static images with no shell, so we cannot run
+  # an in-container healthcheck. The processes start in <100ms and the
+  # services that depend on them (gateway, chart-writer, asr-orchestrator)
+  # tolerate a connection retry on first call.
+
+  mock-echart:
+    build:
+      context: ./mock-echart
+    container_name: hst-scribe-mock-echart
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "8090:8090"
+    environment:
+      PORT: "8090"
+      SEED_PATH: "/seed/patients.json"
+    volumes:
+      - ./seed:/seed:ro
+
+  mock-asr:
+    build:
+      context: ./mock-asr
+    container_name: hst-scribe-mock-asr
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "8091:8091"
+    environment:
+      PORT: "8091"
+      SEED_PATH: "/seed/utterances.json"
+    volumes:
+      - ./seed:/seed:ro
+
+  # --- backend services ----------------------------------------------------
+
+  audit:
+    build:
+      context: ../backend
+      dockerfile: deploy/Dockerfile.audit
+    container_name: hst-scribe-audit
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "8085:8085"
+    environment:
+      ENV: "dev"
+      LOG_LEVEL: "info"
+      POSTGRES_DSN: "postgres://hst:hst@postgres:5432/hst_scribe?sslmode=disable"
+      NATS_URL: "nats://nats:4222"
+      JWT_SECRET: "dev-secret-do-not-use-in-prod"
+
+  session-manager:
+    build:
+      context: ../backend
+      dockerfile: deploy/Dockerfile.session-manager
+    container_name: hst-scribe-session-manager
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "8081:8081"
+    environment:
+      ENV: "dev"
+      LOG_LEVEL: "info"
+      POSTGRES_DSN: "postgres://hst:hst@postgres:5432/hst_scribe?sslmode=disable"
+      NATS_URL: "nats://nats:4222"
+      # INTERNAL_SVC_TOKEN intentionally unset — see top-of-file note.
+
+  chart-writer:
+    build:
+      context: ../backend
+      dockerfile: deploy/Dockerfile.chart-writer
+    container_name: hst-scribe-chart-writer
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      mock-echart:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "8084:8084"
+    environment:
+      ENV: "dev"
+      LOG_LEVEL: "info"
+      POSTGRES_DSN: "postgres://hst:hst@postgres:5432/hst_scribe?sslmode=disable"
+      NATS_URL: "nats://nats:4222"
+      ECHART_BASE_URL: "http://mock-echart:8090"
+
+  asr-orchestrator:
+    build:
+      context: ../backend
+      dockerfile: deploy/Dockerfile.asr-orchestrator
+    container_name: hst-scribe-asr-orchestrator
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      mock-asr:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "8082:8082"
+    environment:
+      ENV: "dev"
+      LOG_LEVEL: "info"
+      POSTGRES_DSN: "postgres://hst:hst@postgres:5432/hst_scribe?sslmode=disable"
+      NATS_URL: "nats://nats:4222"
+      ASR_PROVIDER: "mock"
+      MOCK_ASR_URL: "ws://mock-asr:8091/asr/v1/stream"
+
+  extraction-worker:
+    build:
+      context: ../backend
+      dockerfile: deploy/Dockerfile.extraction-worker
+    container_name: hst-scribe-extraction-worker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "8083:8083"
+    environment:
+      ENV: "dev"
+      LOG_LEVEL: "info"
+      POSTGRES_DSN: "postgres://hst:hst@postgres:5432/hst_scribe?sslmode=disable"
+      NATS_URL: "nats://nats:4222"
+      LLM_PROVIDER: "fake"
+      FAKE_LLM_SEED_PATH: "/seed/utterances.json"
+    volumes:
+      - ./seed:/seed:ro
+
+  gateway:
+    build:
+      context: ../backend
+      dockerfile: deploy/Dockerfile.gateway
+    container_name: hst-scribe-gateway
+    depends_on:
+      nats:
+        condition: service_healthy
+      session-manager:
+        condition: service_started
+      mock-echart:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "8080:8080"
+    environment:
+      ENV: "dev"
+      LOG_LEVEL: "info"
+      NATS_URL: "nats://nats:4222"
+      JWT_SECRET: "dev-secret-do-not-use-in-prod"
+      SESSION_MANAGER_URL: "http://session-manager:8081"
+      ECHART_BASE_URL: "http://mock-echart:8090"
+      INTERNAL_SVC_TOKEN: "dev-internal-token"
+      # WSS_PUBLIC_BASE_URL drives the wss_url returned in POST /sessions.
+      # Smoke-test connects from the host, so we advertise localhost.
+      WSS_PUBLIC_BASE_URL: "ws://localhost:8080"
 
 volumes:
   postgres_data:

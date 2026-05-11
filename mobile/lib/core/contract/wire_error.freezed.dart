@@ -69,21 +69,18 @@ class _$WireErrorCopyWithImpl<$Res, $Val extends WireError>
   }) {
     return _then(
       _value.copyWith(
-            code:
-                null == code
-                    ? _value.code
-                    : code // ignore: cast_nullable_to_non_nullable
-                        as String,
-            message:
-                null == message
-                    ? _value.message
-                    : message // ignore: cast_nullable_to_non_nullable
-                        as String,
-            details:
-                freezed == details
-                    ? _value.details
-                    : details // ignore: cast_nullable_to_non_nullable
-                        as Map<String, Object?>?,
+            code: null == code
+                ? _value.code
+                : code // ignore: cast_nullable_to_non_nullable
+                      as String,
+            message: null == message
+                ? _value.message
+                : message // ignore: cast_nullable_to_non_nullable
+                      as String,
+            details: freezed == details
+                ? _value.details
+                : details // ignore: cast_nullable_to_non_nullable
+                      as Map<String, Object?>?,
           )
           as $Val,
     );
@@ -126,21 +123,18 @@ class __$$WireErrorImplCopyWithImpl<$Res>
   }) {
     return _then(
       _$WireErrorImpl(
-        code:
-            null == code
-                ? _value.code
-                : code // ignore: cast_nullable_to_non_nullable
-                    as String,
-        message:
-            null == message
-                ? _value.message
-                : message // ignore: cast_nullable_to_non_nullable
-                    as String,
-        details:
-            freezed == details
-                ? _value._details
-                : details // ignore: cast_nullable_to_non_nullable
-                    as Map<String, Object?>?,
+        code: null == code
+            ? _value.code
+            : code // ignore: cast_nullable_to_non_nullable
+                  as String,
+        message: null == message
+            ? _value.message
+            : message // ignore: cast_nullable_to_non_nullable
+                  as String,
+        details: freezed == details
+            ? _value._details
+            : details // ignore: cast_nullable_to_non_nullable
+                  as Map<String, Object?>?,
       ),
     );
   }

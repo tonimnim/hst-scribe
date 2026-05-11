@@ -114,9 +114,9 @@ class AuthController extends _$AuthController {
   /// the bundle is dead. Drops auth state without re-entering [build].
   void onTokenExpiredFromApi() {
     _log.info('auth controller notified: tokens expired from API path');
-    state = AsyncValue<AuthState>.data(
+    state = const AsyncValue<AuthState>.data(
       AuthState.unauthenticated(
-        failure: const AppFailure.unauthenticated(
+        failure: AppFailure.unauthenticated(
           message: 'Token expired; please sign in again',
         ),
       ),

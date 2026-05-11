@@ -72,6 +72,20 @@ func run() error {
 	rootCtx, stopSig := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stopSig()
 
+	tracingCfg := obs.TracingConfig{ServiceName: cfg.ServiceName, Env: string(cfg.Env)}
+	shutdownTracing, err := obs.InitTracing(rootCtx, tracingCfg)
+	if err != nil {
+		return fmt.Errorf("init tracing: %w", err)
+	}
+	obs.LogTracingInit(logger, tracingCfg)
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := shutdownTracing(shutdownCtx); err != nil {
+			logger.Warn("tracing shutdown", slog.String("err", err.Error()))
+		}
+	}()
+
 	pool, err := pg.NewPool(rootCtx, cfg, logger)
 	if err != nil {
 		return fmt.Errorf("postgres pool: %w", err)
@@ -126,9 +140,12 @@ func run() error {
 
 	r := chi.NewRouter()
 	r.Use(chimw.RequestID)
+	r.Use(obs.TracingMiddleware("chart-writer"))
 	r.Use(obs.LoggingMiddleware(logger))
+	r.Use(obs.MetricsMiddleware("chart-writer"))
 	r.Use(httperr.Recoverer(logger))
 	r.Get("/healthz", healthHandler)
+	obs.MountMetrics(r)
 
 	writerCtx, cancelWriter := context.WithCancel(context.Background())
 	writerErrCh := make(chan error, 1)

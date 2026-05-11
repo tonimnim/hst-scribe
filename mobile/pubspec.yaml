@@ -33,10 +33,10 @@ dependencies:
   # Secure storage (tokens + active session PHI)
   flutter_secure_storage: ^9.2.2
 
-  # Biometric sign-off — re-add in Wave 2 (sign feature). local_auth 2.3.x
-  # pulls in objective_c 9.x which forces the native-assets experiment and
-  # breaks build_runner on Windows. Wave 1 only stubs the sign flow.
-  # local_auth: ^2.3.0
+  # Biometric sign-off — see dependency_overrides + docs/codegen-troubleshooting.md
+  # for the path_provider_foundation pin that keeps this off the
+  # objective_c 9.x / native-assets path that breaks build_runner on Windows.
+  local_auth: ^2.3.0
 
   # Wristband QR scanning
   mobile_scanner: ^6.0.2
@@ -47,10 +47,10 @@ dependencies:
   # REST client
   dio: ^5.7.0
 
-  # Crash reporting (scrubbed) — re-add in Wave 2 when we have a DSN.
-  # sentry_flutter pulls in path_provider_foundation → objective_c 9.x →
-  # native-assets experiment, which breaks build_runner on Windows hosts.
-  # sentry_flutter: ^8.11.0
+  # Crash reporting (scrubbed). See dependency_overrides + docs/codegen-
+  # troubleshooting.md — the path_provider_foundation pin keeps this off the
+  # objective_c 9.x / native-assets path that crashes build_runner on Windows.
+  sentry_flutter: ^8.14.2
 
   # Structured logging
   logger: ^2.5.0
@@ -95,17 +95,45 @@ dev_dependencies:
 
 # ----- dependency_overrides -----
 #
-# Force `analyzer_plugin >= 0.13.4` to dodge a transitive pull of
-# `analyzer_plugin 0.12.0` (via riverpod_generator -> riverpod_analyzer_utils
-# -> custom_lint_core 0.7.1). 0.12.0 was written for analyzer 6.x and
-# fails to compile against the SDK-pinned analyzer 7.6.0 (Element vs
-# Element2 split). 0.13.4 supports analyzer ^7.5.1.
+# 1) `analyzer_plugin: ^0.13.4`
+#    Forces `analyzer_plugin >= 0.13.4` to dodge a transitive pull of
+#    `analyzer_plugin 0.12.0` (via riverpod_generator -> riverpod_analyzer_utils
+#    -> custom_lint_core 0.7.1). 0.12.0 was written for analyzer 6.x and
+#    fails to compile against the SDK-pinned analyzer 7.6.0 (Element vs
+#    Element2 split). 0.13.4 supports analyzer ^7.5.1.
 #
-# Remove once riverpod_analyzer_utils ships a release pinned to the
-# newer analyzer_plugin (tracked: see KNOWN ISSUE note above on
-# riverpod_lint).
+#    Remove once riverpod_analyzer_utils ships a release pinned to the
+#    newer analyzer_plugin (tracked: see KNOWN ISSUE note above on
+#    riverpod_lint).
+#
+# 2) `path_provider_foundation: 2.5.1`
+#    Pins below `2.5.0` / `2.6.0`, which pull `objective_c: ^9.x`.
+#    `objective_c` 9.x declares the `native-assets` experiment, which makes
+#    `dart run build_runner build` refuse to run without
+#    `--enable-experiment=native-assets`; with the flag, build_runner's
+#    `NativeAssetsBuildPlanner` then crashes parsing `pub deps --json`
+#    (FormatException: Unexpected end of input). 2.5.1 is the latest
+#    foundation release with the `objective_c` dep removed and is still
+#    accepted by the `path_provider 2.1.5 -> path_provider_foundation: ^2.3.2`
+#    constraint range.
+#
+#    The full chain that surfaces this on Windows hosts is:
+#      flutter_secure_storage_windows -> path_provider
+#        -> path_provider_foundation (>=2.5.0, <2.5.1 || >=2.6.0)
+#        -> objective_c 9.x -> native-assets.
+#
+#    Re-evaluate once Flutter SDK / build_runner / objective_c reconcile:
+#      - build_runner ships a release that tolerates native-assets package
+#        graphs (>2.5.x), OR
+#      - path_provider_foundation 2.6.x is removed from the dep graph again.
+#    Track: https://github.com/dart-lang/build/issues (native-assets parser)
+#    and https://github.com/flutter/flutter (path_provider_foundation 2.6.0).
+#
+#    See `mobile/docs/codegen-troubleshooting.md` for the full diagnosis,
+#    other options that were tried, and the maintainer runbook.
 dependency_overrides:
   analyzer_plugin: ^0.13.4
+  path_provider_foundation: 2.5.1
 
 flutter:
   uses-material-design: true

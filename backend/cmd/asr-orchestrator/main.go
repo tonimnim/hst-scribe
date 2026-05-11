@@ -108,6 +108,20 @@ func run() error {
 	rootCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	tracingCfg := obs.TracingConfig{ServiceName: cfg.ServiceName, Env: string(cfg.Env)}
+	shutdownTracing, err := obs.InitTracing(rootCtx, tracingCfg)
+	if err != nil {
+		return fmt.Errorf("init tracing: %w", err)
+	}
+	obs.LogTracingInit(logger, tracingCfg)
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := shutdownTracing(shutdownCtx); err != nil {
+			logger.Warn("tracing shutdown", slog.String("err", err.Error()))
+		}
+	}()
+
 	// Postgres pool.
 	pool, err := pg.NewPool(rootCtx, cfg, logger)
 	if err != nil {
@@ -160,8 +174,11 @@ func run() error {
 	// HTTP /healthz.
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
+	r.Use(obs.TracingMiddleware("asr-orchestrator"))
 	r.Use(obs.LoggingMiddleware(logger))
+	r.Use(obs.MetricsMiddleware("asr-orchestrator"))
 	r.Use(httperr.Recoverer(logger))
+	obs.MountMetrics(r)
 	r.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)

@@ -1,0 +1,1086 @@
+# HST Scribe Gateway API — OpenAPI 3.1 specification.
+#
+# Source of truth: ../CONTRACT.md
+# Drift policy: CONTRACT.md wins. This file follows it. Do not invent
+# fields or status codes that are not in CONTRACT.md without updating
+# the contract first.
+#
+# Lint: npx @redocly/cli lint contract/openapi/openapi.yaml
+openapi: 3.1.0
+info:
+  title: HST Scribe Gateway API
+  version: 1.0.0
+  summary: Public REST surface for the HST Scribe ASC nurse-scribing platform.
+  description: |
+    REST API for the HST Scribe gateway. The gateway is the only public
+    ingress between the iPad app (and other approved clients) and the
+    internal scribing pipeline (ASR, extractor, chart-writer, eChart).
+
+    The wire contract — every endpoint, payload, enum, and error code —
+    is normatively specified in [`contract/CONTRACT.md`](../CONTRACT.md).
+    This OpenAPI document is a machine-readable projection of that
+    contract for the synchronous REST surface only. The realtime WSS
+    protocol is described in companion file [`asyncapi.yaml`](./asyncapi.yaml).
+
+    ## Conventions
+      * `snake_case` JSON field names.
+      * RFC 3339 timestamps **with explicit timezone**.
+      * UUIDv7 identifiers, server-generated.
+      * Canonical error envelope on every non-2xx response:
+        `{ "code": "...", "message": "...", "details": { ... } }`.
+
+    ## Authentication
+      * Mobile clients perform OAuth 2.0 Authorization Code + PKCE
+        against the HST IdP and obtain a short-lived JWT access token
+        (~15 minutes) plus a long-lived refresh token.
+      * All REST calls and the WSS upgrade carry
+        `Authorization: Bearer <access_token>`.
+      * On HTTP 401, clients call `POST /api/v1/auth/refresh` and retry once.
+
+    ## PHI handling
+    Only `display_name_initials` and `mrn_last4` ever appear on the
+    wire to clients. Full name, DOB, and full MRN are server-side only
+    and MUST NOT appear in client-side logs, analytics, or crash reports.
+  contact:
+    name: HST Scribe Platform
+    email: platform@hst-scribe.example
+    url: https://hst-scribe.example
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+  x-contract-source: ../CONTRACT.md
+  x-protocol-version: v1
+
+servers:
+  - url: http://localhost:8080
+    description: Local development gateway (docker-compose).
+  - url: https://api.hst-scribe.example
+    description: Production gateway (placeholder host).
+
+tags:
+  - name: sessions
+    description: Lifecycle of a scribing session (create, read, sign).
+  - name: events
+    description: Mutations on extracted draft events (edit, confirm, reject).
+  - name: auth
+    description: Token refresh and authentication helpers.
+  - name: system
+    description: Operational endpoints (health, metrics, spec).
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/sessions:
+    post:
+      tags: [sessions]
+      operationId: createSession
+      summary: Create a session and lock to a patient.
+      description: |
+        Creates a new scribing session bound to a single patient. The
+        returned `wss_url` is the realtime stream endpoint; clients MUST
+        connect there with the same bearer token to begin capture.
+
+        Idempotent: if an active session already exists for the tuple
+        `(asc_id, patient_id, user_id)`, the existing session is returned
+        instead of creating a duplicate.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionRequest'
+            examples:
+              pacu:
+                summary: Standard PACU session
+                value:
+                  patient_id: 01931d7e-1f6c-7c00-8b5f-3a9e3a4b0001
+                  workflow_type: pacu
+                  asc_id: 01931d7e-1f6c-7c00-8b5f-3a9e3a4b0002
+      responses:
+        '201':
+          description: Session created (or existing active session returned).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateSessionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/AuthInvalid'
+        '403':
+          $ref: '#/components/responses/AuthForbidden'
+        '409':
+          description: Patient is already locked to another active session.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WireError'
+              example:
+                code: patient_locked
+                message: patient is locked to another active session
+                details:
+                  patient_id: 01931d7e-1f6c-7c00-8b5f-3a9e3a4b0001
+                  active_session_id: 01931d80-1f6c-7c00-8b5f-3a9e3a4b0003
+        '422':
+          description: Request was well-formed but failed validation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WireError'
+              example:
+                code: bad_request
+                message: workflow_type must be one of pacu|preop|intraop
+                details:
+                  field: workflow_type
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/WireError'
+
+  /api/v1/sessions/{id}:
+    parameters:
+      - $ref: '#/components/parameters/SessionIdPath'
+    get:
+      tags: [sessions]
+      operationId: getSession
+      summary: Get a session summary including all events and statuses.
+      responses:
+        '200':
+          description: Session summary.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '401':
+          $ref: '#/components/responses/AuthInvalid'
+        '403':
+          $ref: '#/components/responses/AuthForbidden'
+        '404':
+          $ref: '#/components/responses/SessionNotFound'
+        '410':
+          $ref: '#/components/responses/SessionExpired'
+        default:
+          $ref: '#/components/responses/WireError'
+
+  /api/v1/sessions/{id}/events/{event_id}:
+    parameters:
+      - $ref: '#/components/parameters/SessionIdPath'
+      - $ref: '#/components/parameters/EventIdPath'
+    patch:
+      tags: [events]
+      operationId: editEvent
+      summary: Edit fields on a draft event.
+      description: |
+        Partially update fields of a draft event. The server validates
+        the supplied fields against the event's `event_type` schema and
+        returns the merged event on success. The event status transitions
+        to `draft_edited`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditEventRequest'
+            examples:
+              changeDose:
+                summary: Correct a medication dose
+                value:
+                  fields:
+                    dose_value: 8
+      responses:
+        '200':
+          description: Event was edited.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EditEventResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/AuthInvalid'
+        '403':
+          $ref: '#/components/responses/AuthForbidden'
+        '404':
+          $ref: '#/components/responses/SessionNotFound'
+        '410':
+          $ref: '#/components/responses/SessionExpired'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        default:
+          $ref: '#/components/responses/WireError'
+
+  /api/v1/sessions/{id}/events/{event_id}/confirm:
+    parameters:
+      - $ref: '#/components/parameters/SessionIdPath'
+      - $ref: '#/components/parameters/EventIdPath'
+    post:
+      tags: [events]
+      operationId: confirmEvent
+      summary: Confirm a draft event for chart write-back on sign.
+      description: |
+        Promotes a draft event to `confirmed`. Confirmed events become
+        chart-write candidates and are written to eChart when the session
+        is signed.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              description: |
+                Body is optional and currently ignored. Reserved for
+                future per-confirm metadata.
+      responses:
+        '200':
+          description: Event was confirmed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventAck'
+        '401':
+          $ref: '#/components/responses/AuthInvalid'
+        '403':
+          $ref: '#/components/responses/AuthForbidden'
+        '404':
+          $ref: '#/components/responses/SessionNotFound'
+        '410':
+          $ref: '#/components/responses/SessionExpired'
+        default:
+          $ref: '#/components/responses/WireError'
+
+  /api/v1/sessions/{id}/events/{event_id}/reject:
+    parameters:
+      - $ref: '#/components/parameters/SessionIdPath'
+      - $ref: '#/components/parameters/EventIdPath'
+    post:
+      tags: [events]
+      operationId: rejectEvent
+      summary: Reject a draft event. The event will not be written to the chart.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              description: |
+                Body is optional and currently ignored. Reserved for
+                future per-reject metadata (e.g. reason code).
+      responses:
+        '200':
+          description: Event was rejected.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventAck'
+        '401':
+          $ref: '#/components/responses/AuthInvalid'
+        '403':
+          $ref: '#/components/responses/AuthForbidden'
+        '404':
+          $ref: '#/components/responses/SessionNotFound'
+        '410':
+          $ref: '#/components/responses/SessionExpired'
+        default:
+          $ref: '#/components/responses/WireError'
+
+  /api/v1/sessions/{id}/sign:
+    parameters:
+      - $ref: '#/components/parameters/SessionIdPath'
+    post:
+      tags: [sessions]
+      operationId: signSession
+      summary: Sign the session and commit confirmed events to eChart.
+      description: |
+        Finalizes a session. All `confirmed` events are written to
+        eChart as final entries; `draft` and `rejected` events are
+        discarded. The session transitions to terminal state `signed`
+        and cannot be modified afterward.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignSessionRequest'
+            examples:
+              biometric:
+                summary: Touch ID / Face ID
+                value:
+                  auth_method: biometric
+                  auth_token: eyJhbGciOi...assertion
+              pin:
+                summary: PIN-based fallback
+                value:
+                  auth_method: pin
+                  auth_token: eyJhbGciOi...assertion
+      responses:
+        '200':
+          description: Session was signed and writes were committed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignSessionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/AuthInvalid'
+        '403':
+          $ref: '#/components/responses/AuthForbidden'
+        '404':
+          $ref: '#/components/responses/SessionNotFound'
+        '410':
+          $ref: '#/components/responses/SessionExpired'
+        '502':
+          description: Downstream chart-writer failure (transient, retryable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WireError'
+              example:
+                code: extractor_failed
+                message: chart writer is unavailable
+                details:
+                  reason: echart_timeout
+        default:
+          $ref: '#/components/responses/WireError'
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [auth]
+      operationId: refreshAuth
+      summary: Exchange a refresh token for a new short-lived access token.
+      description: |
+        Standard OAuth 2.0 refresh-token exchange. The caller presents
+        a still-valid refresh token (or, in current dev builds, a
+        bearer JWT — see CONTRACT.md §4) and receives a fresh access
+        token. The client SHOULD retry the originally-failing request
+        exactly once after a successful refresh.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: New access token issued.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshResponse'
+        '401':
+          $ref: '#/components/responses/AuthInvalid'
+        default:
+          $ref: '#/components/responses/WireError'
+
+  /api/v1/sessions/{session_id}/stream:
+    parameters:
+      - name: session_id
+        in: path
+        required: true
+        description: Session UUIDv7 returned by `POST /api/v1/sessions`.
+        schema:
+          $ref: '#/components/schemas/UUIDv7'
+      - name: last_seq
+        in: query
+        required: false
+        description: |
+          On reconnection, the last server `seq` the client successfully
+          processed. The server replays unacked messages from
+          `last_seq + 1` (retained for up to 5 minutes).
+        schema:
+          type: integer
+          format: int64
+          minimum: 0
+      - name: token
+        in: query
+        required: false
+        description: |
+          WSS upgrade fallback for clients that cannot set the
+          `Authorization` header (e.g. browser `WebSocket`). The server
+          prefers the header when both are present.
+        schema:
+          type: string
+    get:
+      tags: [sessions]
+      operationId: openSessionStream
+      x-websocket: true
+      x-asyncapi-ref: ./asyncapi.yaml
+      summary: Open the realtime session stream (WebSocket upgrade).
+      description: |
+        **This is not a normal HTTP GET.** It is the HTTP 101
+        WebSocket upgrade entry point for the realtime session stream.
+        OpenAPI 3.1 does not natively model WebSocket messages; the
+        message-level contract (frame envelope, message types,
+        payloads) is specified in [`asyncapi.yaml`](./asyncapi.yaml).
+
+        The bearer token from `Authorization: Bearer <jwt>` is required
+        on the upgrade. Clients that cannot set headers MAY supply the
+        token via the `token` query parameter — this fallback exists
+        only because browsers' `WebSocket` constructor does not allow
+        custom headers.
+      responses:
+        '101':
+          description: WebSocket upgrade accepted; session stream begins.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/AuthInvalid'
+        '403':
+          $ref: '#/components/responses/AuthForbidden'
+        '404':
+          $ref: '#/components/responses/SessionNotFound'
+        '410':
+          $ref: '#/components/responses/SessionExpired'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/WireError'
+
+  /healthz:
+    get:
+      tags: [system]
+      operationId: healthCheck
+      summary: Liveness probe.
+      security: []
+      responses:
+        '200':
+          description: Service is alive.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+              example:
+                status: ok
+
+  /metrics:
+    get:
+      tags: [system]
+      operationId: metrics
+      summary: Prometheus exposition format metrics.
+      description: |
+        Standard Prometheus exposition. Intended for scraping by the
+        cluster's monitoring stack; not part of the public client API.
+        Access SHOULD be restricted at the infrastructure layer
+        (network policy or sidecar) — there is no per-request auth.
+      security: []
+      responses:
+        '200':
+          description: Prometheus metrics in the text exposition format.
+          content:
+            text/plain; version=0.0.4:
+              schema:
+                type: string
+              example: |
+                # HELP gateway_http_requests_total Total HTTP requests.
+                # TYPE gateway_http_requests_total counter
+                gateway_http_requests_total{method="POST",route="/api/v1/sessions",code="201"} 42
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Bearer JWT obtained via OAuth 2.0 Authorization Code + PKCE.
+        Claims: `sub` (user_id), `asc_id`, `role`, `exp`.
+    internalToken:
+      type: apiKey
+      in: header
+      name: X-Internal-Token
+      description: |
+        Static shared secret presented on the **internal**
+        service-to-service surface (e.g. session-manager, chart-writer,
+        eChart). NOT used on any path published in this document —
+        every public route requires `bearerAuth`. Documented here as the
+        canonical convention for service-mesh callers.
+
+  parameters:
+    SessionIdPath:
+      name: id
+      in: path
+      required: true
+      description: Session UUIDv7.
+      schema:
+        $ref: '#/components/schemas/UUIDv7'
+    EventIdPath:
+      name: event_id
+      in: path
+      required: true
+      description: Extracted event UUIDv7.
+      schema:
+        $ref: '#/components/schemas/UUIDv7'
+
+  responses:
+    WireError:
+      description: Canonical error envelope (catch-all).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/WireError'
+    BadRequest:
+      description: Malformed request (bad JSON, missing required field, bad enum).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/WireError'
+          example:
+            code: bad_request
+            message: patient_id, workflow_type, and asc_id are required
+    ValidationFailed:
+      description: Request was well-formed but failed semantic validation.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/WireError'
+          example:
+            code: bad_request
+            message: dose_value must be greater than zero
+            details:
+              field: dose_value
+    AuthInvalid:
+      description: Bearer token missing, malformed, or expired.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/WireError'
+          example:
+            code: auth_invalid
+            message: authentication token is missing or invalid
+    AuthForbidden:
+      description: Token is valid but lacks scope for this resource.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/WireError'
+          example:
+            code: auth_forbidden
+            message: token does not grant access to this resource
+    SessionNotFound:
+      description: No such session.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/WireError'
+          example:
+            code: session_not_found
+            message: session not found
+            details:
+              session_id: 01931d80-1f6c-7c00-8b5f-3a9e3a4b0003
+    SessionExpired:
+      description: Session is past `expires_at` or has already been signed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/WireError'
+          example:
+            code: session_expired
+            message: session is expired or already signed
+            details:
+              session_id: 01931d80-1f6c-7c00-8b5f-3a9e3a4b0003
+    RateLimited:
+      description: Tenant or session rate limit exceeded.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/WireError'
+          example:
+            code: rate_limited
+            message: rate limit exceeded
+            details:
+              scope: session
+
+  schemas:
+    # --- Primitives ---
+    UUIDv7:
+      type: string
+      format: uuid
+      description: |
+        UUIDv7 (time-ordered). Server-generated for every persistent
+        resource. Strings are lowercase, hyphenated, 36 chars.
+      pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      examples:
+        - 01931d80-1f6c-7c00-8b5f-3a9e3a4b0003
+
+    RFC3339Time:
+      type: string
+      format: date-time
+      description: RFC 3339 timestamp **with timezone offset**. UTC preferred.
+      examples:
+        - '2026-05-11T14:30:00-04:00'
+
+    # --- Enums ---
+    WorkflowType:
+      type: string
+      description: |
+        The clinical workflow phase being captured. MVP (Phase 0)
+        supports `pacu` only.
+      enum: [pacu, preop, intraop]
+      examples: [pacu]
+
+    SessionStatus:
+      type: string
+      description: |
+        Lifecycle status of a session. `active` until the nurse signs
+        or the inactivity timeout fires.
+      enum: [active, paused, signed, expired, errored]
+
+    EventStatus:
+      type: string
+      description: |
+        Lifecycle status of an extracted event. Matches the WSS
+        `event_ack.status` enum plus the initial `draft` state.
+      enum: [draft, draft_edited, confirmed, rejected]
+
+    EventType:
+      type: string
+      enum:
+        - vital_sign
+        - medication_administered
+        - dispo
+        - note
+
+    Speaker:
+      type: string
+      description: Diarized speaker label.
+      enum: [nurse, patient, surgeon, anesthesia, unknown]
+
+    SignAuthMethod:
+      type: string
+      enum: [biometric, pin]
+
+    # --- Wire shapes (REST) ---
+    CreateSessionRequest:
+      type: object
+      required: [patient_id, workflow_type, asc_id]
+      additionalProperties: false
+      properties:
+        patient_id:
+          $ref: '#/components/schemas/UUIDv7'
+        workflow_type:
+          $ref: '#/components/schemas/WorkflowType'
+        asc_id:
+          allOf:
+            - $ref: '#/components/schemas/UUIDv7'
+          description: |
+            Ambulatory Surgery Center ID. MUST match the `asc_id`
+            claim in the bearer token; mismatch returns `auth_forbidden`.
+
+    CreateSessionResponse:
+      type: object
+      required: [session_id, wss_url, patient_context, started_at, expires_at]
+      properties:
+        session_id:
+          $ref: '#/components/schemas/UUIDv7'
+        wss_url:
+          type: string
+          format: uri
+          description: |
+            Fully-qualified WebSocket URL the client MUST connect to
+            for realtime capture. Use the same bearer token.
+          examples:
+            - wss://api.hst-scribe.example/api/v1/sessions/01931d80-1f6c-7c00-8b5f-3a9e3a4b0003/stream
+        patient_context:
+          $ref: '#/components/schemas/PatientContext'
+        started_at:
+          $ref: '#/components/schemas/RFC3339Time'
+        expires_at:
+          $ref: '#/components/schemas/RFC3339Time'
+
+    Session:
+      type: object
+      description: |
+        Full session summary, including all extracted events and their
+        current statuses. Returned by `GET /api/v1/sessions/{id}`.
+      required: [session_id, status, workflow_type, started_at]
+      properties:
+        session_id:
+          $ref: '#/components/schemas/UUIDv7'
+        status:
+          $ref: '#/components/schemas/SessionStatus'
+        workflow_type:
+          $ref: '#/components/schemas/WorkflowType'
+        patient_context:
+          $ref: '#/components/schemas/PatientContext'
+        started_at:
+          $ref: '#/components/schemas/RFC3339Time'
+        expires_at:
+          $ref: '#/components/schemas/RFC3339Time'
+        signed_at:
+          $ref: '#/components/schemas/RFC3339Time'
+        events:
+          type: array
+          description: All extracted events with their current statuses.
+          items:
+            type: object
+            required: [event, status]
+            properties:
+              event:
+                $ref: '#/components/schemas/ExtractedEvent'
+              status:
+                $ref: '#/components/schemas/EventStatus'
+              edited_fields:
+                type: object
+                additionalProperties: true
+                description: Fields overridden by the nurse via `PATCH`.
+
+    PatientContext:
+      type: object
+      description: |
+        Patient state snapshot at session start. **`display_name_initials`
+        and `mrn_last4` are the only patient identifiers permitted on
+        the client wire.** Full name and full MRN are server-side only.
+      required:
+        - patient_id
+        - display_name_initials
+        - mrn_last4
+        - procedure
+        - current_medications
+        - allergies
+        - comorbidities
+      properties:
+        patient_id:
+          $ref: '#/components/schemas/UUIDv7'
+        display_name_initials:
+          type: string
+          description: e.g. `J.D.` Maximum 8 characters.
+          maxLength: 8
+        mrn_last4:
+          type: string
+          description: Last 4 characters of the patient's MRN.
+          pattern: '^[A-Za-z0-9]{4}$'
+        procedure:
+          type: string
+          description: Free-text procedure name from the case schedule.
+        current_medications:
+          type: array
+          items:
+            $ref: '#/components/schemas/Medication'
+        allergies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Allergy'
+        comorbidities:
+          type: array
+          description: Snomed-mapped comorbidity slugs.
+          items:
+            type: string
+
+    Medication:
+      type: object
+      required: [rxnorm_code, name]
+      properties:
+        rxnorm_code:
+          type: string
+          description: RxNorm CUI for the medication.
+        name:
+          type: string
+        dose:
+          type: string
+          description: Free-text dose (e.g. `4 mg`). Use the typed event for new admins.
+        route:
+          type: string
+
+    Allergy:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        severity:
+          type: string
+          enum: [mild, moderate, severe]
+
+    EditEventRequest:
+      type: object
+      required: [fields]
+      additionalProperties: false
+      properties:
+        fields:
+          type: object
+          minProperties: 1
+          additionalProperties: true
+          description: |
+            Partial map of field overrides. Keys MUST be valid for the
+            target event's `event_type` (see `ExtractedEvent`).
+
+    EditEventResponse:
+      type: object
+      required: [event_id, status, fields]
+      properties:
+        event_id:
+          $ref: '#/components/schemas/UUIDv7'
+        status:
+          $ref: '#/components/schemas/EventStatus'
+        fields:
+          type: object
+          additionalProperties: true
+          description: |
+            The merged field set after applying the edit. Shape varies
+            by `event_type` — see the typed `*Fields` schemas.
+
+    EventAck:
+      type: object
+      description: Server acknowledgement of an event-state transition.
+      required: [event_id, status]
+      properties:
+        event_id:
+          $ref: '#/components/schemas/UUIDv7'
+        status:
+          $ref: '#/components/schemas/EventStatus'
+
+    SignSessionRequest:
+      type: object
+      required: [auth_method, auth_token]
+      additionalProperties: false
+      properties:
+        auth_method:
+          $ref: '#/components/schemas/SignAuthMethod'
+        auth_token:
+          type: string
+          description: |
+            Short-lived attestation token from the device's biometric
+            or PIN flow. Format is opaque to the client; the gateway
+            validates HMAC + expiry.
+
+    SignSessionResponse:
+      type: object
+      required: [session_id, status, signed_at, events_written, events_rejected]
+      properties:
+        session_id:
+          $ref: '#/components/schemas/UUIDv7'
+        status:
+          type: string
+          enum: [signed]
+        signed_at:
+          $ref: '#/components/schemas/RFC3339Time'
+        events_written:
+          type: integer
+          minimum: 0
+          description: Count of `confirmed` events written to eChart.
+        events_rejected:
+          type: integer
+          minimum: 0
+          description: Count of rejected events discarded at sign time.
+
+    RefreshRequest:
+      type: object
+      description: |
+        Refresh-token exchange. In current dev builds the gateway
+        accepts a still-valid access token in the `Authorization`
+        header and the body is optional; production builds REQUIRE
+        `refresh_token`.
+      properties:
+        refresh_token:
+          type: string
+
+    RefreshResponse:
+      type: object
+      required: [access_token, expires_in, token_type]
+      properties:
+        access_token:
+          type: string
+          description: New JWT access token.
+        refresh_token:
+          type: string
+          description: |
+            Rotated refresh token, when rotation is enabled. May be
+            empty in dev builds.
+        expires_in:
+          type: integer
+          minimum: 1
+          description: Lifetime of the new access token in seconds.
+        token_type:
+          type: string
+          enum: [Bearer]
+
+    # --- Extracted event (the LLM extractor output) ---
+    ExtractedEvent:
+      type: object
+      title: ExtractedEvent
+      description: |
+        Canonical extractor output. Matches
+        [`contract/schemas/event-schema.json`](../schemas/event-schema.json).
+        Field shape is keyed by `event_type`; see the per-type
+        sub-schemas below.
+      required:
+        - event_id
+        - event_type
+        - fields
+        - confidence
+        - source_utterance
+        - source_transcript_ids
+        - extracted_at
+        - event_time
+      properties:
+        event_id:
+          $ref: '#/components/schemas/UUIDv7'
+        event_type:
+          $ref: '#/components/schemas/EventType'
+        fields:
+          type: object
+          description: |
+            Per-`event_type` payload. One of `VitalSignFields`,
+            `MedicationAdministeredFields`, `DispoFields`, `NoteFields`.
+          oneOf:
+            - $ref: '#/components/schemas/VitalSignFields'
+            - $ref: '#/components/schemas/MedicationAdministeredFields'
+            - $ref: '#/components/schemas/DispoFields'
+            - $ref: '#/components/schemas/NoteFields'
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: |
+            Extractor confidence. UI MUST surface this; events below
+            the per-event-type review threshold are flagged `needs_review`
+            and cannot be auto-confirmed.
+        source_utterance:
+          type: string
+          description: Verbatim transcript text that produced this event.
+        source_transcript_ids:
+          type: array
+          items:
+            $ref: '#/components/schemas/UUIDv7'
+        extracted_at:
+          $ref: '#/components/schemas/RFC3339Time'
+        event_time:
+          $ref: '#/components/schemas/RFC3339Time'
+      x-json-schema-ref: ../schemas/event-schema.json
+
+    VitalSignFields:
+      type: object
+      required: [vital_type, value, unit]
+      additionalProperties: false
+      properties:
+        vital_type:
+          type: string
+          enum:
+            - blood_pressure_systolic
+            - blood_pressure_diastolic
+            - heart_rate
+            - spo2
+            - respiratory_rate
+            - temperature_c
+            - temperature_f
+            - pain_score
+        value:
+          type: number
+          description: |
+            Numeric reading. Pain score is an integer 0–10 (still
+            transmitted as a number).
+        unit:
+          type: string
+          description: |
+            Unit string, e.g. `mmHg`, `bpm`, `%`, `breaths/min`, `C`, `F`.
+
+    MedicationAdministeredFields:
+      type: object
+      required: [medication_name, rxnorm_code, dose_value, dose_unit, route]
+      additionalProperties: false
+      properties:
+        medication_name:
+          type: string
+        rxnorm_code:
+          type: string
+          description: |
+            RxNorm CUI. The extractor MUST resolve this; if it cannot,
+            the event is flagged `needs_review` and `confidence` is
+            capped at `0.5`.
+        dose_value:
+          type: number
+          exclusiveMinimum: 0
+        dose_unit:
+          type: string
+          enum: [mg, mcg, g, ml, unit]
+        route:
+          type: string
+          enum:
+            - iv
+            - im
+            - po
+            - sublingual
+            - topical
+            - inhaled
+            - intranasal
+            - rectal
+            - subcutaneous
+        indication:
+          type: string
+
+    DispoFields:
+      type: object
+      required: [disposition_type]
+      additionalProperties: false
+      properties:
+        disposition_type:
+          type: string
+          enum:
+            - discharge_home
+            - transfer_to_hospital
+            - admit_observation
+            - transfer_to_floor
+        discharge_criteria_met:
+          type: boolean
+        notes:
+          type: string
+
+    NoteFields:
+      type: object
+      required: [note_text]
+      additionalProperties: false
+      properties:
+        note_text:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    # --- Errors ---
+    WireError:
+      type: object
+      title: WireError
+      description: |
+        Canonical error envelope used on every non-2xx response (REST)
+        and inside the WSS `error` frame payload.
+
+        `code` is the stable machine-readable identifier; `message` is
+        a human-friendly description; `details` carries structured
+        context (never contains PHI).
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: |
+            Stable error code. See CONTRACT.md §2 for the full list.
+            Adding a new code is a contract change.
+          enum:
+            - auth_invalid
+            - auth_forbidden
+            - session_not_found
+            - session_expired
+            - patient_locked
+            - audio_format_unsupported
+            - chunk_out_of_order
+            - rate_limited
+            - extractor_failed
+            - not_implemented
+            - bad_request
+            - internal
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+          description: |
+            Optional structured context. MUST NOT contain PHI — only
+            IDs, scope names, expected/got numbers, etc.

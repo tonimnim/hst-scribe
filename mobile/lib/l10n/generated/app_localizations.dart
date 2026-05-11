@@ -202,6 +202,90 @@ abstract class AppLocalizations {
   /// **'End session'**
   String get captureEnd;
 
+  /// No description provided for @captureSessionEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Session ended.'**
+  String get captureSessionEnded;
+
+  /// No description provided for @captureReconnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting…'**
+  String get captureReconnecting;
+
+  /// No description provided for @captureMicDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone access denied. Enable it in Settings to record.'**
+  String get captureMicDenied;
+
+  /// No description provided for @captureVoiceCommandsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice commands on'**
+  String get captureVoiceCommandsOn;
+
+  /// No description provided for @captureVoiceCommandsOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice commands off'**
+  String get captureVoiceCommandsOff;
+
+  /// No description provided for @captureTranscriptPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcript will appear here once you start talking.'**
+  String get captureTranscriptPlaceholder;
+
+  /// No description provided for @eventCardConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get eventCardConfirm;
+
+  /// No description provided for @eventCardReject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get eventCardReject;
+
+  /// No description provided for @eventCardEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get eventCardEdit;
+
+  /// No description provided for @eventCardSourceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'From utterance'**
+  String get eventCardSourceLabel;
+
+  /// No description provided for @eventConfidenceHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'HIGH'**
+  String get eventConfidenceHigh;
+
+  /// No description provided for @eventConfidenceMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'MEDIUM'**
+  String get eventConfidenceMedium;
+
+  /// No description provided for @eventConfidenceLow.
+  ///
+  /// In en, this message translates to:
+  /// **'LOW'**
+  String get eventConfidenceLow;
+
+  /// No description provided for @eventListEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No events yet. They\'ll appear here as the AI extracts them.'**
+  String get eventListEmpty;
+
   /// No description provided for @signTitle.
   ///
   /// In en, this message translates to:
@@ -219,6 +303,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use PIN instead'**
   String get signPin;
+
+  /// No description provided for @signSummaryConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed'**
+  String get signSummaryConfirmed;
+
+  /// No description provided for @signSummaryRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get signSummaryRejected;
+
+  /// No description provided for @signSummaryDraftsPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Drafts pending'**
+  String get signSummaryDraftsPending;
+
+  /// No description provided for @signBlockUntilResolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Review or reject all pending drafts before signing.'**
+  String get signBlockUntilResolved;
+
+  /// No description provided for @signBiometricPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm with Face / Touch ID to sign the session.'**
+  String get signBiometricPrompt;
+
+  /// No description provided for @signPinPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your 6-digit PIN to sign the session.'**
+  String get signPinPrompt;
+
+  /// No description provided for @signSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Session signed.'**
+  String get signSuccess;
 
   /// No description provided for @settingsTitle.
   ///

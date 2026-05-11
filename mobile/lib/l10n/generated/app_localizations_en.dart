@@ -64,6 +64,51 @@ class AppLocalizationsEn extends AppLocalizations {
   String get captureEnd => 'End session';
 
   @override
+  String get captureSessionEnded => 'Session ended.';
+
+  @override
+  String get captureReconnecting => 'Reconnecting…';
+
+  @override
+  String get captureMicDenied =>
+      'Microphone access denied. Enable it in Settings to record.';
+
+  @override
+  String get captureVoiceCommandsOn => 'Voice commands on';
+
+  @override
+  String get captureVoiceCommandsOff => 'Voice commands off';
+
+  @override
+  String get captureTranscriptPlaceholder =>
+      'Transcript will appear here once you start talking.';
+
+  @override
+  String get eventCardConfirm => 'Confirm';
+
+  @override
+  String get eventCardReject => 'Reject';
+
+  @override
+  String get eventCardEdit => 'Edit';
+
+  @override
+  String get eventCardSourceLabel => 'From utterance';
+
+  @override
+  String get eventConfidenceHigh => 'HIGH';
+
+  @override
+  String get eventConfidenceMedium => 'MEDIUM';
+
+  @override
+  String get eventConfidenceLow => 'LOW';
+
+  @override
+  String get eventListEmpty =>
+      'No events yet. They\'ll appear here as the AI extracts them.';
+
+  @override
   String get signTitle => 'Sign and submit';
 
   @override
@@ -71,6 +116,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get signPin => 'Use PIN instead';
+
+  @override
+  String get signSummaryConfirmed => 'Confirmed';
+
+  @override
+  String get signSummaryRejected => 'Rejected';
+
+  @override
+  String get signSummaryDraftsPending => 'Drafts pending';
+
+  @override
+  String get signBlockUntilResolved =>
+      'Review or reject all pending drafts before signing.';
+
+  @override
+  String get signBiometricPrompt =>
+      'Confirm with Face / Touch ID to sign the session.';
+
+  @override
+  String get signPinPrompt => 'Enter your 6-digit PIN to sign the session.';
+
+  @override
+  String get signSuccess => 'Session signed.';
 
   @override
   String get settingsTitle => 'Settings';

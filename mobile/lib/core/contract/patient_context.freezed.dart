@@ -74,26 +74,22 @@ class _$MedicationSummaryCopyWithImpl<$Res, $Val extends MedicationSummary>
   }) {
     return _then(
       _value.copyWith(
-            rxnormCode:
-                null == rxnormCode
-                    ? _value.rxnormCode
-                    : rxnormCode // ignore: cast_nullable_to_non_nullable
-                        as String,
-            name:
-                null == name
-                    ? _value.name
-                    : name // ignore: cast_nullable_to_non_nullable
-                        as String,
-            dose:
-                null == dose
-                    ? _value.dose
-                    : dose // ignore: cast_nullable_to_non_nullable
-                        as String,
-            route:
-                null == route
-                    ? _value.route
-                    : route // ignore: cast_nullable_to_non_nullable
-                        as String,
+            rxnormCode: null == rxnormCode
+                ? _value.rxnormCode
+                : rxnormCode // ignore: cast_nullable_to_non_nullable
+                      as String,
+            name: null == name
+                ? _value.name
+                : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+            dose: null == dose
+                ? _value.dose
+                : dose // ignore: cast_nullable_to_non_nullable
+                      as String,
+            route: null == route
+                ? _value.route
+                : route // ignore: cast_nullable_to_non_nullable
+                      as String,
           )
           as $Val,
     );
@@ -138,26 +134,22 @@ class __$$MedicationSummaryImplCopyWithImpl<$Res>
   }) {
     return _then(
       _$MedicationSummaryImpl(
-        rxnormCode:
-            null == rxnormCode
-                ? _value.rxnormCode
-                : rxnormCode // ignore: cast_nullable_to_non_nullable
-                    as String,
-        name:
-            null == name
-                ? _value.name
-                : name // ignore: cast_nullable_to_non_nullable
-                    as String,
-        dose:
-            null == dose
-                ? _value.dose
-                : dose // ignore: cast_nullable_to_non_nullable
-                    as String,
-        route:
-            null == route
-                ? _value.route
-                : route // ignore: cast_nullable_to_non_nullable
-                    as String,
+        rxnormCode: null == rxnormCode
+            ? _value.rxnormCode
+            : rxnormCode // ignore: cast_nullable_to_non_nullable
+                  as String,
+        name: null == name
+            ? _value.name
+            : name // ignore: cast_nullable_to_non_nullable
+                  as String,
+        dose: null == dose
+            ? _value.dose
+            : dose // ignore: cast_nullable_to_non_nullable
+                  as String,
+        route: null == route
+            ? _value.route
+            : route // ignore: cast_nullable_to_non_nullable
+                  as String,
       ),
     );
   }
@@ -299,16 +291,14 @@ class _$AllergySummaryCopyWithImpl<$Res, $Val extends AllergySummary>
   $Res call({Object? name = null, Object? severity = null}) {
     return _then(
       _value.copyWith(
-            name:
-                null == name
-                    ? _value.name
-                    : name // ignore: cast_nullable_to_non_nullable
-                        as String,
-            severity:
-                null == severity
-                    ? _value.severity
-                    : severity // ignore: cast_nullable_to_non_nullable
-                        as String,
+            name: null == name
+                ? _value.name
+                : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+            severity: null == severity
+                ? _value.severity
+                : severity // ignore: cast_nullable_to_non_nullable
+                      as String,
           )
           as $Val,
     );
@@ -343,16 +333,14 @@ class __$$AllergySummaryImplCopyWithImpl<$Res>
   $Res call({Object? name = null, Object? severity = null}) {
     return _then(
       _$AllergySummaryImpl(
-        name:
-            null == name
-                ? _value.name
-                : name // ignore: cast_nullable_to_non_nullable
-                    as String,
-        severity:
-            null == severity
-                ? _value.severity
-                : severity // ignore: cast_nullable_to_non_nullable
-                    as String,
+        name: null == name
+            ? _value.name
+            : name // ignore: cast_nullable_to_non_nullable
+                  as String,
+        severity: null == severity
+            ? _value.severity
+            : severity // ignore: cast_nullable_to_non_nullable
+                  as String,
       ),
     );
   }
@@ -502,41 +490,34 @@ class _$PatientContextCopyWithImpl<$Res, $Val extends PatientContext>
   }) {
     return _then(
       _value.copyWith(
-            patientId:
-                null == patientId
-                    ? _value.patientId
-                    : patientId // ignore: cast_nullable_to_non_nullable
-                        as String,
-            displayNameInitials:
-                null == displayNameInitials
-                    ? _value.displayNameInitials
-                    : displayNameInitials // ignore: cast_nullable_to_non_nullable
-                        as String,
-            mrnLast4:
-                null == mrnLast4
-                    ? _value.mrnLast4
-                    : mrnLast4 // ignore: cast_nullable_to_non_nullable
-                        as String,
-            procedure:
-                null == procedure
-                    ? _value.procedure
-                    : procedure // ignore: cast_nullable_to_non_nullable
-                        as String,
-            currentMedications:
-                null == currentMedications
-                    ? _value.currentMedications
-                    : currentMedications // ignore: cast_nullable_to_non_nullable
-                        as List<MedicationSummary>,
-            allergies:
-                null == allergies
-                    ? _value.allergies
-                    : allergies // ignore: cast_nullable_to_non_nullable
-                        as List<AllergySummary>,
-            comorbidities:
-                null == comorbidities
-                    ? _value.comorbidities
-                    : comorbidities // ignore: cast_nullable_to_non_nullable
-                        as List<String>,
+            patientId: null == patientId
+                ? _value.patientId
+                : patientId // ignore: cast_nullable_to_non_nullable
+                      as String,
+            displayNameInitials: null == displayNameInitials
+                ? _value.displayNameInitials
+                : displayNameInitials // ignore: cast_nullable_to_non_nullable
+                      as String,
+            mrnLast4: null == mrnLast4
+                ? _value.mrnLast4
+                : mrnLast4 // ignore: cast_nullable_to_non_nullable
+                      as String,
+            procedure: null == procedure
+                ? _value.procedure
+                : procedure // ignore: cast_nullable_to_non_nullable
+                      as String,
+            currentMedications: null == currentMedications
+                ? _value.currentMedications
+                : currentMedications // ignore: cast_nullable_to_non_nullable
+                      as List<MedicationSummary>,
+            allergies: null == allergies
+                ? _value.allergies
+                : allergies // ignore: cast_nullable_to_non_nullable
+                      as List<AllergySummary>,
+            comorbidities: null == comorbidities
+                ? _value.comorbidities
+                : comorbidities // ignore: cast_nullable_to_non_nullable
+                      as List<String>,
           )
           as $Val,
     );
@@ -588,41 +569,34 @@ class __$$PatientContextImplCopyWithImpl<$Res>
   }) {
     return _then(
       _$PatientContextImpl(
-        patientId:
-            null == patientId
-                ? _value.patientId
-                : patientId // ignore: cast_nullable_to_non_nullable
-                    as String,
-        displayNameInitials:
-            null == displayNameInitials
-                ? _value.displayNameInitials
-                : displayNameInitials // ignore: cast_nullable_to_non_nullable
-                    as String,
-        mrnLast4:
-            null == mrnLast4
-                ? _value.mrnLast4
-                : mrnLast4 // ignore: cast_nullable_to_non_nullable
-                    as String,
-        procedure:
-            null == procedure
-                ? _value.procedure
-                : procedure // ignore: cast_nullable_to_non_nullable
-                    as String,
-        currentMedications:
-            null == currentMedications
-                ? _value._currentMedications
-                : currentMedications // ignore: cast_nullable_to_non_nullable
-                    as List<MedicationSummary>,
-        allergies:
-            null == allergies
-                ? _value._allergies
-                : allergies // ignore: cast_nullable_to_non_nullable
-                    as List<AllergySummary>,
-        comorbidities:
-            null == comorbidities
-                ? _value._comorbidities
-                : comorbidities // ignore: cast_nullable_to_non_nullable
-                    as List<String>,
+        patientId: null == patientId
+            ? _value.patientId
+            : patientId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        displayNameInitials: null == displayNameInitials
+            ? _value.displayNameInitials
+            : displayNameInitials // ignore: cast_nullable_to_non_nullable
+                  as String,
+        mrnLast4: null == mrnLast4
+            ? _value.mrnLast4
+            : mrnLast4 // ignore: cast_nullable_to_non_nullable
+                  as String,
+        procedure: null == procedure
+            ? _value.procedure
+            : procedure // ignore: cast_nullable_to_non_nullable
+                  as String,
+        currentMedications: null == currentMedications
+            ? _value._currentMedications
+            : currentMedications // ignore: cast_nullable_to_non_nullable
+                  as List<MedicationSummary>,
+        allergies: null == allergies
+            ? _value._allergies
+            : allergies // ignore: cast_nullable_to_non_nullable
+                  as List<AllergySummary>,
+        comorbidities: null == comorbidities
+            ? _value._comorbidities
+            : comorbidities // ignore: cast_nullable_to_non_nullable
+                  as List<String>,
       ),
     );
   }

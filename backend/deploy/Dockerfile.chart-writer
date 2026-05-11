@@ -1,0 +1,32 @@
+# syntax=docker/dockerfile:1.7
+
+# --- builder ---
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /src
+
+# Cache module downloads in a separate layer.
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+# Static binary, no cgo.
+ENV CGO_ENABLED=0 GOOS=linux
+
+RUN go build -trimpath -ldflags="-s -w" -o /out/chart-writer ./cmd/chart-writer
+
+# --- runtime ---
+FROM gcr.io/distroless/static:nonroot
+
+WORKDIR /app
+
+COPY --from=builder /out/chart-writer /app/chart-writer
+
+EXPOSE 8084
+
+USER nonroot:nonroot
+
+# distroless/static has no shell; healthcheck must use the binary's own
+# /healthz endpoint via an external prober (k8s readinessProbe / ALB).
+ENTRYPOINT ["/app/chart-writer"]

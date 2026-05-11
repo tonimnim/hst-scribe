@@ -80,6 +80,20 @@ func run() error {
 	rootCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	tracingCfg := obs.TracingConfig{ServiceName: cfg.ServiceName, Env: string(cfg.Env)}
+	shutdownTracing, err := obs.InitTracing(rootCtx, tracingCfg)
+	if err != nil {
+		return fmt.Errorf("init tracing: %w", err)
+	}
+	obs.LogTracingInit(logger, tracingCfg)
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := shutdownTracing(shutdownCtx); err != nil {
+			logger.Warn("tracing shutdown", slog.String("err", err.Error()))
+		}
+	}()
+
 	pool, err := pg.NewPool(rootCtx, cfg, logger)
 	if err != nil {
 		return fmt.Errorf("postgres: %w", err)
@@ -125,8 +139,11 @@ func run() error {
 	// observability stack mounted as cross-cutting middleware.
 	root := chi.NewRouter()
 	root.Use(middleware.RequestID)
+	root.Use(obs.TracingMiddleware("audit"))
 	root.Use(obs.LoggingMiddleware(logger))
+	root.Use(obs.MetricsMiddleware("audit"))
 	root.Use(httperr.Recoverer(logger))
+	obs.MountMetrics(root)
 	root.Mount("/", apiServer.Routes())
 
 	srv := &http.Server{
